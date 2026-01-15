@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@layer components {
+    .glass-blue {
+        @apply bg-sky-600/70 backdrop-blur-xl border border-white/30 shadow-lg shadow-sky-500/20 text-white hover:bg-sky-600/90 hover:shadow-sky-500/40 transition-all duration-300;
+    }
+}
