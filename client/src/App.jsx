@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navigation from './customer/Navigation';
-import HomePage from './customer/Pages/HomePage/HomePage';
-import ProductListing from './customer/Pages/ProductListing/ProductListing';
+import HomePage from './customer/pages/HomePage/HomePage';
+import ProductListing from './customer/pages/ProductListing/ProductListing';
 
 const App = () => {
     return (
