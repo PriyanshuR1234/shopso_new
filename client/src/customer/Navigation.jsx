@@ -442,7 +442,7 @@ export default function Navigation() {
 
               <div className="ml-auto flex items-center">
                 <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:space-x-6">
-                  <a href="#" className="text-sm font-medium text-gray-700 hover:text-sky-600 transition-colors duration-200">
+                  <a href="/vendor/login" className="text-sm font-medium text-gray-700 hover:text-sky-600 transition-colors duration-200">
                     Sign in
                   </a>
                   <span aria-hidden="true" className="h-6 w-px bg-gray-200" />
