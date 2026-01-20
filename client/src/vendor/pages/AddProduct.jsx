@@ -1,155 +1,138 @@
 import { useState, useEffect } from "react";
 import API from "../../utils/api";
 import toast from "react-hot-toast";
+import { categories } from "../../data/categories";
 
 export default function AddProduct() {
-  const [vendor, setVendor] = useState(null);
   const [vendorId, setVendorId] = useState(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("");
+
+  const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
+
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Load vendor
   useEffect(() => {
-    const storedVendor = JSON.parse(localStorage.getItem("vendor") || "{}");
+    const vendor = JSON.parse(localStorage.getItem("vendor") || "{}");
 
-    if (!storedVendor || !storedVendor.id) {
+    if (!vendor?.id) {
       toast.error("Please login again");
-      setTimeout(() => {
-        window.location.href = "/vendor/login";
-      }, 1200);
+      window.location.href = "/vendor/login";
       return;
     }
 
-    setVendor(storedVendor);
-    setVendorId(storedVendor.id);
+    setVendorId(vendor.id);
   }, []);
 
-  // PREVIEW SELECTED IMAGES
   useEffect(() => {
     if (images.length === 0) return;
-
-    const urls = images.map((img) => URL.createObjectURL(img));
-    setPreviews(urls);
+    setPreviews(images.map((img) => URL.createObjectURL(img)));
   }, [images]);
 
-  // Upload multiple images
   const uploadImages = async () => {
-    try {
-      const formData = new FormData();
-      images.forEach((img) => formData.append("images", img));
-
-      const res = await API.post("/products/upload-multiple", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      return res.data.urls; // array of uploaded URLs
-    } catch (err) {
-      toast.error("Failed to upload images");
-      throw err;
-    }
+    const formData = new FormData();
+    images.forEach((img) => formData.append("images", img));
+    const res = await API.post("/products/upload-multiple", formData);
+    return res.data.urls;
   };
 
-  // Add product
   const addProduct = async () => {
+    if (!name || !description || !price || !stock || !category) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
     try {
-      if (!vendorId) {
-        toast.error("Vendor not logged in");
-        return;
-      }
-
-      if (!name || !description || !price) {
-        toast.error("All fields are required");
-        return;
-      }
-
-      if (images.length === 0) {
-        toast.error("Please select at least 1 image");
-        return;
-      }
-
-      if (images.length > 5) {
-        toast.error("Maximum 5 images allowed");
-        return;
-      }
-
       setLoading(true);
-      toast.loading("Uploading images...");
-
       const image_urls = await uploadImages();
-
-      toast.dismiss();
-      toast.loading("Saving product...");
 
       await API.post("/products/add", {
         vendor_id: vendorId,
         name,
         description,
         price: Number(price),
+        stock: Number(stock),
+        category,
+        subcategory,
         image_urls,
       });
 
-      toast.dismiss();
-      toast.success("Product added successfully!");
-
-      setTimeout(() => {
-        window.location.href = "/vendor/dashboard";
-      }, 1000);
+      toast.success("Product added!");
+      window.location.href = "/vendor/dashboard";
     } catch (err) {
-      console.error("ADD PRODUCT ERROR:", err);
-      toast.error("Failed to add product");
+      toast.error("Error adding product");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: "40px auto" }}>
-      <h2 className="text-2xl font-bold mb-4">Add Product</h2>
+    <div className="max-w-lg mx-auto p-6 bg-white rounded shadow">
+      <h2 className="text-3xl font-bold mb-6">Add Product</h2>
 
-      <input
-        placeholder="Name"
-        onChange={(e) => setName(e.target.value)}
-        className="p-2 border w-full mb-3"
-      />
+      <input className="p-3 border rounded w-full mb-3" placeholder="Name" onChange={(e) => setName(e.target.value)} />
 
-      <textarea
-        placeholder="Description"
-        onChange={(e) => setDescription(e.target.value)}
-        className="p-2 border w-full mb-3"
-      />
+      <textarea className="p-3 border rounded w-full mb-3" placeholder="Description" rows={4}
+        onChange={(e) => setDescription(e.target.value)} />
 
-      <input
-        type="number"
-        placeholder="Price"
-        onChange={(e) => setPrice(e.target.value)}
-        className="p-2 border w-full mb-3"
-      />
+      <input type="number" className="p-3 border rounded w-full mb-3" placeholder="Price"
+        onChange={(e) => setPrice(e.target.value)} />
 
-      {/* MULTI IMAGE UPLOAD */}
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={(e) => setImages([...e.target.files])}
-        className="mb-3"
-      />
+      <input type="number" className="p-3 border rounded w-full mb-3" placeholder="Stock"
+        onChange={(e) => setStock(e.target.value)} />
 
-      {/* PREVIEW GALLERY */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {previews.map((src, i) => (
-          <img key={i} src={src} className="w-24 h-24 object-cover rounded shadow" />
+      {/* CATEGORY */}
+      <select
+        className="p-3 border rounded w-full mb-3"
+        value={category}
+        onChange={(e) => {
+          setCategory(e.target.value);
+          setSubcategory("");
+        }}
+      >
+        <option value="">Select Category</option>
+        {Object.keys(categories).map((cat) => (
+          <option key={cat} value={cat}>
+            {categories[cat].label}
+          </option>
         ))}
-      </div>
+      </select>
+
+      {/* SUBCATEGORY */}
+      {category && categories[category].sub.length > 0 && (
+        <select
+          className="p-3 border rounded w-full mb-3"
+          value={subcategory}
+          onChange={(e) => setSubcategory(e.target.value)}
+        >
+          <option value="">Select Subcategory</option>
+          {categories[category].sub.map((sub) => (
+            <option key={sub} value={sub}>
+              {sub}
+            </option>
+          ))}
+        </select>
+      )}
+
+      <input type="file" multiple className="mb-3" onChange={(e) => setImages([...e.target.files])} />
+
+      {previews.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {previews.map((src, i) => (
+            <img key={i} src={src} className="h-24 object-cover rounded" />
+          ))}
+        </div>
+      )}
 
       <button
         onClick={addProduct}
-        disabled={loading}
-        className="bg-black text-white p-3 rounded w-full"
+        className="p-3 bg-black text-white w-full rounded"
       >
         {loading ? "Adding..." : "Add Product"}
       </button>

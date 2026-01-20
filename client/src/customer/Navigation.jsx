@@ -2,6 +2,8 @@
 
 import { Fragment, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+const user = JSON.parse(localStorage.getItem("user"));
+
 import {
   Dialog,
   DialogBackdrop,
@@ -441,15 +443,71 @@ export default function Navigation() {
               </PopoverGroup>
 
               <div className="ml-auto flex items-center">
-                <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:space-x-6">
-                  <a href="/vendor/login" className="text-sm font-medium text-gray-700 hover:text-sky-600 transition-colors duration-200">
-                    Sign in
-                  </a>
-                  <span aria-hidden="true" className="h-6 w-px bg-gray-200" />
-                  <a href="#" className="text-sm font-medium text-gray-700 hover:text-sky-600 transition-colors duration-200">
-                    Create account
-                  </a>
-                </div>
+              <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:space-x-6">
+
+  {!user ? (
+    <>
+      {/* Sign In Dropdown */}
+      <div className="relative group">
+        <button className="text-sm font-medium text-gray-700 hover:text-sky-600 transition">
+          Sign in
+        </button>
+        <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          <a href="/user/login" className="block px-4 py-2 hover:bg-sky-50">
+            User Login
+          </a>
+          <a href="/vendor/login" className="block px-4 py-2 hover:bg-sky-50">
+            Vendor Login
+          </a>
+        </div>
+      </div>
+
+      <span className="h-6 w-px bg-gray-200" />
+
+      {/* Signup Dropdown */}
+      <div className="relative group">
+        <button className="text-sm font-medium text-gray-700 hover:text-sky-600 transition">
+          Create account
+        </button>
+        <div className="absolute right-0 mt-2 w-44 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          <a href="/user/signup" className="block px-4 py-2 hover:bg-sky-50">
+            User Signup
+          </a>
+          <a href="/vendor/signup" className="block px-4 py-2 hover:bg-sky-50">
+            Vendor Signup
+          </a>
+        </div>
+      </div>
+    </>
+  ) : (
+    /* USER PROFILE DROPDOWN */
+    <div className="relative group">
+      <button className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+        👤 {user.name || "Account"}
+      </button>
+
+      <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+        <a href="/profile" className="block px-4 py-2 hover:bg-sky-50">
+          My Profile
+        </a>
+        <a href="/orders" className="block px-4 py-2 hover:bg-sky-50">
+          Orders
+        </a>
+        <button
+          onClick={() => {
+            localStorage.removeItem("user");
+            window.location.href = "/";
+          }}
+          className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  )}
+
+</div>
+
 
                 <div className="hidden lg:ml-8 lg:flex">
                   <a href="#" className="flex items-center text-gray-700 hover:text-gray-800">
