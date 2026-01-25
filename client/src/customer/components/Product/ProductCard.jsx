@@ -1,11 +1,16 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProductCard({ product }) {
+    const navigate = useNavigate();
     // Generate star rating (mock - could be from product data)
     const rating = 4; // Default 4 stars
 
     return (
-        <div className="group cursor-pointer flex flex-col bg-sky-50/30 backdrop-blur-md rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300 border border-white/40 hover:border-sky-300 transform hover:-translate-y-2 relative shadow-sm h-full">
+        <div
+            onClick={() => navigate(`/product/${product.id}`)}
+            className="group cursor-pointer flex flex-col bg-sky-50/30 backdrop-blur-md rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-300 border border-white/40 hover:border-sky-300 transform hover:-translate-y-2 relative shadow-sm h-full"
+        >
             {/* Image Container */}
             <div className="w-full aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 relative">
                 <img
@@ -14,7 +19,7 @@ export default function ProductCard({ product }) {
                     loading="lazy"
                     className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
                     onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/400x500?text=No+Image';
+                        e.target.src = 'https://placehold.jp/400x500.png?text=No%20Image';
                     }}
                 />
                 {product.discountPersent && (
@@ -68,14 +73,42 @@ export default function ProductCard({ product }) {
                 {/* Price */}
                 <div className="mt-auto flex items-center gap-1 sm:gap-2 flex-wrap">
                     <span className="text-xs sm:text-lg font-bold text-gray-900">₹{product.discountedPrice}</span>
-                    <span className="text-[9px] sm:text-sm text-gray-500 line-through">₹{product.price}</span>
-                    <span className="text-[9px] sm:text-xs font-bold text-green-600">
-                        {product.discountPersent}% OFF
-                    </span>
+                    {product.price > product.discountedPrice && (
+                        <>
+                            <span className="text-[9px] sm:text-sm text-gray-500 line-through">₹{product.price}</span>
+                            <span className="text-[9px] sm:text-xs font-bold text-green-600">
+                                {product.discountPercent}% OFF
+                            </span>
+                        </>
+                    )}
                 </div>
 
                 {/* Add to Cart Button */}
-                <button className="mt-2 w-full glass-blue py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-sm font-semibold active:scale-95">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // This logic should match Add to Cart in ProductDetails or be a quick add
+                        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+                        const existingIndex = cart.findIndex((item) => item.id === product.id);
+                        if (existingIndex >= 0) {
+                            cart[existingIndex].quantity += 1;
+                        } else {
+                            cart.push({
+                                id: product.id,
+                                name: product.title,
+                                price: product.discountedPrice || product.price,
+                                image: product.imageUrl,
+                                vendor_id: product.vendor_id || product.vendorId, // Ensure mapped correctly
+                                quantity: 1
+                            });
+                        }
+                        localStorage.setItem("cart", JSON.stringify(cart));
+                        window.dispatchEvent(new Event("cart-updated"));
+                        const toast = require("react-hot-toast").toast; // Lazy require to avoid import issues if not top-level
+                        toast.success("Added to cart");
+                    }}
+                    className="mt-2 w-full glass-blue py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-sm font-semibold active:scale-95"
+                >
                     Add to Cart
                 </button>
             </div>

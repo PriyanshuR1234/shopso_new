@@ -1,18 +1,63 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import ProductCard from '../Product/ProductCard';
 import { getTrendingProducts, sortByDemand } from '../../../utils/productUtils';
+import supabase from '../../../utils/supabaseClient';
 
-export default function HomeSectionCarousel({ data, sectionName, showOnlyTrending = false }) {
+export default function HomeSectionCarousel({ data, categoryId, sectionName, showOnlyTrending = false }) {
     const scrollContainerRef = useRef(null);
+    const [fetchedProducts, setFetchedProducts] = useState([]);
 
-    // Process data: filter for trending if requested, then sort by demand
+    // Mapper utility (same as ProductListing)
+    const mapProduct = (p) => {
+        const price = p.price || 0;
+        const discountedPrice = p.discounted_price || price;
+        const discountPercent = p.discount_percent || (price > discountedPrice ? Math.round(((price - discountedPrice) / price) * 100) : 0);
+
+        return {
+            id: p.id,
+            title: p.name,
+            brand: p.brand || "Brand",
+            price: price,
+            discountedPrice: discountedPrice,
+            discountPercent: discountPercent,
+            demand: p.sold || 0,
+            imageUrl: p.product_images?.[0]?.image_url || "https://placehold.jp/400x500.png?text=No%20Image",
+            vendor_id: p.vendor_id,
+        };
+    };
+
+    useEffect(() => {
+        if (categoryId) {
+            const fetchProducts = async () => {
+                const { data: products } = await supabase
+                    .from('products')
+                    .select('*, product_images(*)')
+                    .eq('category_id', categoryId)
+                    .limit(10);
+
+                if (products) {
+                    setFetchedProducts(products.map(mapProduct));
+                }
+            };
+            fetchProducts();
+        }
+    }, [categoryId]);
+
+    // Process data: Use passed data OR fetched data
+    const finalData = data || fetchedProducts;
+
+    // Filter for trending if requested, then sort by demand
     const processedData = useMemo(() => {
-        let items = data || [];
+        let items = finalData || [];
         if (showOnlyTrending) {
+            // If fetching trending dynamically, we might need a different query, 
+            // but for now relying on utility if 'data' is passed or if we just want to filter the fetched set.
+            // Note: getTrendingProducts util expects a large list to filter from.
+            // If we fetched specific category, we might not want to filter further unless requested.
             items = getTrendingProducts(items);
         }
         return sortByDemand(items);
-    }, [data, showOnlyTrending]);
+    }, [finalData, showOnlyTrending]);
 
     const scroll = (direction) => {
         if (scrollContainerRef.current) {

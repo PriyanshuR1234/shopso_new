@@ -1,8 +1,12 @@
+// src/pages/vendor/VendorDashboard.jsx
+
 import { useEffect, useState, useMemo } from "react";
-import API from "../../utils/api";
+import { useSearchParams } from "react-router-dom"; // Added useSearchParams
+import supabase from "../../utils/supabaseClient";
 import toast from "react-hot-toast";
 
-// Swiper
+import PendingVendorModal from "../../components/PendingVendorModal";
+
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -10,61 +14,125 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 export default function VendorDashboard() {
-  const vendor = JSON.parse(localStorage.getItem("vendor") || "{}");
+  const [vendor, setVendor] = useState(() => JSON.parse(localStorage.getItem("vendor") || "null"));
   const vendor_id = vendor?.id;
+  const user_id = vendor?.user_id;
 
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const updated = JSON.parse(localStorage.getItem("vendor") || "null");
+      setVendor(updated);
+    };
+    window.addEventListener("vendor-profile-update", handleUpdate);
+    window.addEventListener("user-session-change", handleUpdate);
+    return () => {
+      window.removeEventListener("vendor-profile-update", handleUpdate);
+      window.removeEventListener("user-session-change", handleUpdate);
+    };
+  }, []);
+
+  /* ------------------------------------------------------------
+      SYNC SEARCH WITH URL
+  -------------------------------------------------------------*/
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  const [status, setStatus] = useState(null);
   const [products, setProducts] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [stockFilter, setStockFilter] = useState("all");
   const [sortBy, setSortBy] = useState("");
 
-  /** FETCH PRODUCTS **/
+  /* ------------------------------------------------------------
+      FETCH VENDOR STATUS (Supabase)
+  -------------------------------------------------------------*/
   useEffect(() => {
-    if (!vendor_id) {
-      toast.error("Vendor not logged in");
-      return;
-    }
+    if (!user_id) return;
 
-    Promise.all([
-      API.get(`/products/vendor/${vendor_id}`),
-      API.get(`/orders/vendor/${vendor_id}`),
-    ])
-      .then(([pRes, sRes]) => {
-        const arr = Array.isArray(pRes.data)
-          ? pRes.data
-          : Array.isArray(pRes.data?.products)
-          ? pRes.data.products
-          : [];
+    const loadStatus = async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("status")
+        .eq("user_id", user_id)
+        .single();
 
-        const normalized = arr.map((p) => ({
-          ...p,
-          product_images: Array.isArray(p.product_images)
-            ? p.product_images
-            : [],
-          stock: typeof p.stock === "number" ? p.stock : 0,
-        }));
+      if (error) {
+        console.log(error);
+        setStatus("pending");
+      } else {
+        setStatus(data.status);
+      }
+    };
 
-        setProducts(normalized);
-        setStats(sRes.data || {});
-      })
-      .catch((e) => {
-        console.error("LOAD ERROR:", e);
-        toast.error("Failed to load dashboard");
-      })
-      .finally(() => setLoading(false));
-  }, [vendor_id]);
+    loadStatus();
+  }, [user_id]);
 
-  /** FILTER PRODUCST **/
+  /* ------------------------------------------------------------
+      FETCH PRODUCTS (Supabase)
+  -------------------------------------------------------------*/
+  useEffect(() => {
+    if (status !== "approved" || !vendor_id) return;
+
+    const loadProducts = async () => {
+      try {
+        // Get products
+        const { data: prod, error: prodErr } = await supabase
+          .from("products")
+          .select("*, product_images(*)")
+          .eq("vendor_id", vendor_id);
+
+        if (prodErr) console.log(prodErr);
+
+        setProducts(prod || []);
+
+        // Get analytics via Edge Function (Offloads processing from DB)
+        const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('vendor-analytics', {
+          body: { vendor_id }
+        });
+
+        if (analyticsErr) {
+          console.error("Analytics failure:", analyticsErr);
+          // Fallback to local calculation if EF fails (e.g. 401 during dev)
+          const { data: ordersData } = await supabase.from("orders").select("total_price, status").eq("vendor_id", vendor_id);
+          const totalRevenue = (ordersData || []).reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+          const pendingOrders = (ordersData || []).filter(o => o.status === 'pending').length;
+          const completedOrders = (ordersData || []).filter(o => o.status === 'completed' || o.status === 'delivered').length;
+
+          setStats({
+            total_orders: ordersData?.length || 0,
+            total_revenue: totalRevenue,
+            pending_orders: pendingOrders,
+            completed_orders: completedOrders
+          });
+        } else if (analyticsData) {
+          setStats(analyticsData);
+        }
+      } catch (e) {
+        console.log("Dashboard load error:", e);
+      }
+
+      setLoading(false);
+    };
+
+    loadProducts();
+  }, [vendor_id, status]);
+
+  /* ------------------------------------------------------------
+      FILTERING + SORTING
+  -------------------------------------------------------------*/
   const filteredProducts = useMemo(() => {
-    if (!Array.isArray(products)) return [];
     let list = [...products];
 
-    if (search.trim() !== "") {
+    if (search.trim()) {
       list = list.filter((p) =>
-        p?.name?.toLowerCase().includes(search.toLowerCase())
+        p.name.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -73,151 +141,197 @@ export default function VendorDashboard() {
 
     if (sortBy === "price_low") list.sort((a, b) => a.price - b.price);
     if (sortBy === "price_high") list.sort((a, b) => b.price - a.price);
-
-    if (sortBy === "newest") {
-      list.sort((a, b) => {
-        const da = a.created_at ? new Date(a.created_at) : 0;
-        const db = b.created_at ? new Date(b.created_at) : 0;
-        return db - da;
-      });
-    }
+    if (sortBy === "newest")
+      list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     return list;
   }, [products, search, stockFilter, sortBy]);
 
-  /** DELETE **/
+  /* ------------------------------------------------------------
+      DELETE PRODUCT (+ Storage Cleanup)
+  -------------------------------------------------------------*/
   const deleteProduct = async (id) => {
     if (!window.confirm("Delete this product?")) return;
 
     try {
-      await API.delete(`/products/delete/${id}/${vendor_id}`);
+      // 1. Get image URLs before they are cascaded away
+      const { data: images } = await supabase
+        .from("product_images")
+        .select("image_url")
+        .eq("product_id", id);
+
+      // 2. Delete product (triggers cascade in DB)
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
+
+      // 3. Cleanup storage files
+      if (images && images.length > 0) {
+        const { deleteFileByUrl } = await import("../../utils/storageUtils");
+        for (const img of images) {
+          await deleteFileByUrl(img.image_url);
+        }
+      }
+
       setProducts((prev) => prev.filter((p) => p.id !== id));
-      toast.success("Product deleted");
-    } catch {
+      toast.success("Product deleted & storage cleaned");
+    } catch (err) {
+      console.error(err);
       toast.error("Delete failed");
     }
   };
 
-  if (loading) {
+  /* ------------------------------------------------------------
+      CONDITIONAL RENDERS
+  -------------------------------------------------------------*/
+  if (loading && !vendor_id)
     return (
-      <div className="text-center p-10 text-xl font-semibold text-gray-500">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="font-bold text-gray-400 animate-pulse uppercase tracking-widest text-xs">Synchronizing Store Data...</p>
+      </div>
+    );
+
+  if (!vendor_id || !user_id)
+    return <div className="p-6 text-center text-red-500 font-bold border-2 border-dashed border-red-200 rounded-2xl m-6">Session Expired or Store Not Found. Please Login Again.</div>;
+
+  if (status === "pending") return <PendingVendorModal />;
+
+  if (loading)
+    return (
+      <div className="text-center p-10 text-xl text-gray-500">
         Loading dashboard...
       </div>
     );
-  }
 
+  /* ------------------------------------------------------------
+      MAIN UI
+  -------------------------------------------------------------*/
   return (
     <div className="space-y-10">
 
-      {/* Dashboard Header */}
+      {/* HEADER */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-8 shadow-lg">
         <h1 className="text-3xl font-bold">Vendor Dashboard</h1>
-        <p className="text-blue-100 mt-1">
-          Welcome back, manage your business analytics & inventory
-        </p>
+        <p className="text-blue-100 mt-1">Manage products & orders</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard title="Total Products" value={products.length} icon="📦" />
-        <StatCard href="/vendor/orders" title="Total Orders" value={stats?.totalOrders || 0} icon="🛒" />
-        <StatCard 
-  href="/vendor/analytics" 
-  title="Revenue" 
-  value={`₹${stats?.revenue || 0}`} 
-  icon="💰" 
-/>
-
-<StatCard 
-  href="/vendor/orders?filter=pending" 
-  title="Pending Orders" 
-  value={stats?.pending || 0} 
-  icon="⏳" 
-/>
+        <StatCard title="Total Orders" value={stats.total_orders || 0} icon="🛒" />
+        <StatCard title="Completed" value={stats.completed_orders || 0} icon="✔️" />
+        <StatCard title="Revenue" value={`₹${stats.total_revenue || 0}`} icon="💰" />
+        <StatCard title="Pending" value={stats.pending_orders || 0} icon="⏳" />
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white p-6 rounded-2xl shadow-lg flex flex-wrap gap-4 items-center">
+      {/* LOW STOCK ALERTS */}
+      {products.filter(p => p.stock <= 10).length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            ⚠️ Low Stock Alerts
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {products
+              .filter(p => p.stock <= 10)
+              .sort((a, b) => a.stock - b.stock)
+              .map(p => (
+                <div
+                  key={p.id}
+                  className={`p-4 rounded-xl border flex justify-between items-center shadow-sm ${p.stock <= 3
+                    ? "bg-red-50 border-red-200 text-red-800"
+                    : "bg-amber-50 border-amber-200 text-amber-800"
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{p.stock <= 3 ? "🚨" : "⚠️"}</span>
+                    <div>
+                      <p className="font-bold text-sm line-clamp-1">{p.name}</p>
+                      <p className="text-xs opacity-80">Only {p.stock} units left</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => window.location.href = `/vendor/edit-product/${p.id}`}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${p.stock <= 3
+                      ? "bg-red-600 text-white hover:bg-red-700"
+                      : "bg-amber-600 text-white hover:bg-amber-700"
+                      }`}
+                  >
+                    Restock
+                  </button>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
+      {/* FILTER BAR */}
+      <div className="bg-white p-6 rounded-2xl shadow-lg flex flex-wrap gap-4 items-center">
         <input
-          placeholder="Search products..."
+          placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border p-3 rounded-xl w-72 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="border p-3 rounded-xl w-72"
         />
 
-        <select
-          value={stockFilter}
-          onChange={(e) => setStockFilter(e.target.value)}
-          className="border p-3 rounded-xl bg-gray-50"
-        >
-          <option value="all">All Stock</option>
+        <select className="border p-3 rounded-xl" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}>
+          <option value="all">All</option>
           <option value="in">In Stock</option>
-          <option value="out">Out of Stock</option>
+          <option value="out">Out</option>
         </select>
 
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="border p-3 rounded-xl bg-gray-50"
-        >
-          <option value="">No Sorting</option>
+        <select className="border p-3 rounded-xl" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="">None</option>
           <option value="newest">Newest</option>
-          <option value="price_low">Price: Low → High</option>
-          <option value="price_high">Price: High → Low</option>
+          <option value="price_low">Price Low → High</option>
+          <option value="price_high">Price High → Low</option>
         </select>
 
         <button
           onClick={() => (window.location.href = "/vendor/add-product")}
-          className="ml-auto bg-blue-600 text-white px-5 py-3 rounded-xl shadow hover:bg-blue-700 transition"
+          className="ml-auto bg-blue-600 text-white px-5 py-3 rounded-xl"
         >
           + Add Product
         </button>
       </div>
 
-      {/* Product Grid */}
+      {/* PRODUCT GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {filteredProducts.map((p) => (
-          <div
-            key={p.id}
-            className="bg-white rounded-2xl shadow hover:shadow-xl transition overflow-hidden"
-          >
-            {/* Swiper */}
+          <div key={p.id} className="bg-white rounded-2xl shadow overflow-hidden">
             <Swiper
               modules={[Navigation, Pagination, Autoplay]}
               navigation
               pagination={{ clickable: true }}
-              autoplay={{ delay: 2200 }}
+              autoplay={{ delay: 2000 }}
               loop
-              className="rounded-t-2xl"
             >
-              {p.product_images.length > 0 ? (
-                p.product_images.map((img) => (
-                  <SwiperSlide key={img.id}>
-                    <img
-                      src={img.image_url}
-                      className="h-48 w-full object-cover"
-                    />
-                  </SwiperSlide>
-                ))
-              ) : (
-                <SwiperSlide>
-                  <div className="h-48 flex items-center justify-center bg-gray-100 text-gray-400">
-                    No Image
-                  </div>
+              {(p.product_images || []).map((img) => (
+                <SwiperSlide key={img.id}>
+                  <img src={img.image_url} className="h-48 w-full object-cover" />
                 </SwiperSlide>
-              )}
+              ))}
             </Swiper>
 
-            {/* Details */}
             <div className="p-5 space-y-2">
               <h2 className="font-semibold text-lg">{p.name}</h2>
-              <p className="text-sm text-gray-600 line-clamp-2">{p.description}</p>
+              <p className="text-sm text-gray-600">{p.description}</p>
 
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-xl font-bold text-blue-600">
-                  ₹{p.price}
-                </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-blue-600 text-lg">
+                    ₹{p.discounted_price || p.price}
+                  </span>
+                  {p.discounted_price && p.discounted_price < p.price && (
+                    <>
+                      <span className="text-gray-400 line-through text-xs">
+                        ₹{p.price}
+                      </span>
+                      <span className="text-green-600 text-xs font-bold">
+                        {p.discount_percent || Math.round(((p.price - p.discounted_price) / p.price) * 100)}% OFF
+                      </span>
+                    </>
+                  )}
+                </div>
                 <StockBadge stock={p.stock} />
               </div>
 
@@ -226,14 +340,14 @@ export default function VendorDashboard() {
                   onClick={() =>
                     (window.location.href = `/vendor/edit-product/${p.id}`)
                   }
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition"
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-xl"
                 >
                   Edit
                 </button>
 
                 <button
                   onClick={() => deleteProduct(p.id)}
-                  className="flex-1 bg-red-600 text-white py-2 rounded-xl hover:bg-red-700 transition"
+                  className="flex-1 bg-red-600 text-white py-2 rounded-xl"
                 >
                   Delete
                 </button>
@@ -243,43 +357,27 @@ export default function VendorDashboard() {
         ))}
       </div>
 
-      {filteredProducts.length === 0 && (
-        <p className="text-center text-gray-500 mt-10 text-lg">
-          No products found
-        </p>
-      )}
     </div>
   );
 }
 
-/** Improved Stat Card */
-function StatCard({ title, value, icon, href }) {
+/* ------------------------------------------------------------
+   COMPONENTS
+-------------------------------------------------------------*/
+function StatCard({ title, value, icon }) {
   return (
-    <div
-      onClick={() => href && (window.location.href = href)}
-      className={`bg-white p-6 rounded-xl shadow cursor-pointer 
-                  hover:shadow-lg transition transform hover:scale-[1.02]`}
-    >
-      {/* Icon */}
-      <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-50 text-2xl mb-4">
+    <div className="bg-white p-6 rounded-xl shadow">
+      <div className="w-12 h-12 flex items-center justify-center bg-blue-50 rounded-xl text-2xl">
         {icon}
       </div>
-
-      {/* Title */}
-      <p className="text-gray-500 text-sm font-medium">{title}</p>
-
-      {/* Value */}
-      <h2 className="text-2xl font-bold mt-1">{value}</h2>
+      <p className="text-gray-500 mt-2">{title}</p>
+      <h2 className="text-2xl font-bold">{value}</h2>
     </div>
   );
 }
 
-
-/** Stock Badge */
 function StockBadge({ stock }) {
-  if (stock === 0)
-    return <span className="text-red-600 font-semibold">Out of Stock</span>;
-  if (stock < 5)
-    return <span className="text-orange-600 font-semibold">Low Stock</span>;
-  return <span className="text-green-600 font-semibold">In Stock</span>;
+  if (stock === 0) return <span className="text-red-600">Out of Stock</span>;
+  if (stock < 5) return <span className="text-orange-600">Low Stock</span>;
+  return <span className="text-green-600">In Stock</span>;
 }

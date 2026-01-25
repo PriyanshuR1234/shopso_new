@@ -262,7 +262,7 @@ export const saree = [
         demand: 45
     },
     {
-        imageUrl: "https://images.unsplash.com/photo-1617627143750-d86bc21e4fd1?w=400&h=500&fit=crop",
+        imageUrl: "https://images.unsplash.com/photo-1610030464442-957132041552?w=400&h=500&fit=crop",
         brand: "BIBA",
         title: "Georgette Embroidered Saree",
         color: "Pink",
@@ -366,7 +366,7 @@ export const womenDress = [
         demand: 50
     },
     {
-        imageUrl: "https://images.unsplash.com/photo-1585487000143-c2a9249d08d0?w=400&h=500&fit=crop",
+        imageUrl: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&h=500&fit=crop",
         brand: "FOREVER 21",
         title: "Bodycon Party Dress",
         color: "Red",

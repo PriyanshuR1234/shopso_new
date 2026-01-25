@@ -1,5 +1,6 @@
 import { useState } from "react";
-import API from "../../utils/api";
+import { loginAndGetVendor } from "../../api/auth";
+import supabase from "../../utils/supabaseClient";
 import { Link } from "react-router-dom";
 
 export default function VendorLogin() {
@@ -9,23 +10,69 @@ export default function VendorLogin() {
 
   const loginVendor = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    try {
-      setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      const res = await API.post("/auth/login", { email, password });
-
-      if (res.data.vendor) {
-        localStorage.setItem("vendor", JSON.stringify(res.data.vendor));
-        window.location.href = "/vendor/dashboard";
-      } else {
-        alert("Not a vendor account");
-      }
-    } catch (err) {
-      alert("Login failed");
-    } finally {
+    if (error) {
+      alert("Invalid credentials");
       setLoading(false);
+      return;
     }
+
+    const user = data.user;
+
+    // Fetch vendor
+    const { data: vendor, error: vErr } = await supabase
+      .from("vendors")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (vErr || !vendor) {
+      alert("You are not registered as vendor.");
+      setLoading(false);
+      return;
+    }
+
+    // ALLOW PENDING LOGIN - Dashboard will handle the "Pending" screen
+    /*
+    if (vendor.status !== "approved") {
+      alert("Vendor approval pending.");
+      setLoading(false);
+      return;
+    }
+    */
+
+    // SAVE CORRECT VENDOR OBJECT
+    localStorage.setItem(
+      "vendor",
+      JSON.stringify({
+        id: vendor.id,            // vendor table PK
+        user_id: vendor.user_id,  // auth user id
+        shop_name: vendor.shop_name,
+        shop_logo: vendor.shop_logo, // Added persistence
+        shop_banner: vendor.shop_banner,
+        status: vendor.status,
+      })
+    );
+
+    window.location.href = "/vendor/dashboard";
+  };
+
+
+  const googleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/vendor/onboarding`,
+      },
+    });
+
+    if (error) alert("Google login failed");
   };
 
   return (
@@ -61,7 +108,13 @@ export default function VendorLogin() {
           </button>
         </form>
 
-        {/* ---------------- NEW SIGNUP LINK ---------------- */}
+        <button
+          onClick={googleLogin}
+          className="mt-6 w-full bg-red-600 text-white py-3 rounded-lg"
+        >
+          Continue with Google
+        </button>
+
         <p className="text-center text-gray-600 mt-4">
           Not registered yet?{" "}
           <Link

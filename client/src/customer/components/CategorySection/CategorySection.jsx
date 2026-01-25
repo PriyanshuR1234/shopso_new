@@ -1,41 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const categories = [
-    {
-        name: "Men's Kurtas",
-        image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=300&h=300",
-        path: "/men/clothing/mens_kurta"
-    },
-    {
-        name: "Women's Sarees",
-        image: "https://images.unsplash.com/photo-1610189012906-4c0aa9b2b52b?auto=format&fit=crop&q=80&w=300&h=300",
-        path: "/women/clothing/saree"
-    },
-    {
-        name: "Women's Dresses",
-        image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=300&h=300",
-        path: "/women/clothing/women_dress"
-    },
-    {
-        name: "Men's Shoes",
-        image: "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?auto=format&fit=crop&q=80&w=300&h=300",
-        path: "/men/footwear/shoes"
-    },
-    {
-        name: "Women's Tops",
-        image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&q=80&w=300&h=300",
-        path: "/women/clothing/tops"
-    },
-    {
-        name: "Men's Jeans",
-        image: "https://images.unsplash.com/photo-1604176354204-9268737828e4?auto=format&fit=crop&q=80&w=300&h=300",
-        path: "/men/clothing/men_jeans"
-    }
-];
+import supabase from '../../../utils/supabaseClient';
 
 export default function CategorySection() {
     const navigate = useNavigate();
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            // Fetch categories
+            const { data: cats } = await supabase.from('categories').select('*');
+            if (!cats) return;
+
+            // Fetch one image for each category (inefficient but works for small # of categories)
+            const catsWithImages = await Promise.all(cats.map(async (c) => {
+                const { data: products } = await supabase
+                    .from('products')
+                    .select('product_images(image_url)')
+                    .eq('category_id', c.id)
+                    .limit(1);
+
+                const image = products?.[0]?.product_images?.[0]?.image_url
+                    || "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=300&h=300"; // Fallback
+
+                return { ...c, image, path: `/${c.name.toLowerCase()}` };
+                // Note: path logic might need to match App.jsx routes e.g. /:category
+            }));
+
+            setCategories(catsWithImages);
+        };
+        fetchCategories();
+    }, []);
 
     return (
         <div className="py-8 px-4 lg:px-8 bg-white">

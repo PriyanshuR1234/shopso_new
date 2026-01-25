@@ -1,8 +1,8 @@
 'use client'
 
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-const user = JSON.parse(localStorage.getItem("user"));
+
 
 import {
   Dialog,
@@ -155,7 +155,7 @@ const navigation = {
   ],
 }
 
-import { allProducts } from '../data/products'
+import supabase from '../utils/supabaseClient'
 
 export default function Navigation() {
   const [open, setOpen] = useState(false)
@@ -163,32 +163,67 @@ export default function Navigation() {
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [cartCount, setCartCount] = useState(0);
 
-  // Handle Search Input Change with Suggestions
-  const handleSearchChange = (e) => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const syncState = (e) => {
+      if (!e || e.key === "user") {
+        const u = JSON.parse(localStorage.getItem("user") || "null");
+        setUser(u);
+      }
+      if (!e || e.key === "cart") {
+        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+        const count = cart.reduce((acc, item) => acc + item.quantity, 0);
+        setCartCount(count);
+      }
+    };
+
+    // Initial load
+    syncState();
+
+    const syncUser = () => syncState({ key: "user" });
+    const syncCart = () => syncState({ key: "cart" });
+
+    window.addEventListener("storage", syncState);
+    window.addEventListener("user-session-change", syncUser);
+    window.addEventListener("cart-updated", syncCart);
+
+    return () => {
+      window.removeEventListener("storage", syncState);
+      window.removeEventListener("user-session-change", syncUser);
+      window.removeEventListener("cart-updated", syncCart);
+    };
+  }, []);
+
+  // Handle Search Input Change with Dynamic Supabase Search
+  const handleSearchChange = async (e) => {
     const query = e.target.value
     setSearchQuery(query)
 
     if (query.length > 1) {
-      const lowerQuery = query.toLowerCase()
-      // Filter products by title, brand, or category
-      const uniqueSuggestions = new Set()
-      const matches = allProducts.filter(item => {
-        if (uniqueSuggestions.size >= 5) return false;
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, name, brand")
+          .or(`name.ilike.%${query}%,brand.ilike.%${query}%`)
+          .limit(5);
 
-        const titleMatch = item.title?.toLowerCase().includes(lowerQuery)
-        const brandMatch = item.brand?.toLowerCase().includes(lowerQuery)
-        const categoryMatch = item.category?.toLowerCase().includes(lowerQuery)
+        if (error) throw error;
 
-        if (titleMatch || brandMatch || categoryMatch) {
-          uniqueSuggestions.add(item.title)
-          return true
-        }
-        return false
-      }).slice(0, 5)
+        // Map to match existing suggestion UI
+        const matches = data.map(p => ({
+          id: p.id,
+          title: p.name, // compatibility with existing UI
+          brand: p.brand
+        }));
 
-      setSuggestions(matches)
-      setShowSuggestions(true)
+        setSuggestions(matches)
+        setShowSuggestions(true)
+      } catch (err) {
+        console.error("Search error:", err);
+      }
     } else {
       setSuggestions([])
       setShowSuggestions(false)
@@ -443,70 +478,80 @@ export default function Navigation() {
               </PopoverGroup>
 
               <div className="ml-auto flex items-center">
-              <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:space-x-6">
+                <div className="hidden lg:flex lg:flex-1 lg:items-center lg:justify-end lg:space-x-6">
 
-  {!user ? (
-    <>
-      {/* Sign In Dropdown */}
-      <div className="relative group">
-        <button className="text-sm font-medium text-gray-700 hover:text-sky-600 transition">
-          Sign in
-        </button>
-        <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-          <a href="/user/login" className="block px-4 py-2 hover:bg-sky-50">
-            User Login
-          </a>
-          <a href="/vendor/login" className="block px-4 py-2 hover:bg-sky-50">
-            Vendor Login
-          </a>
-        </div>
-      </div>
+                  {!user ? (
+                    <>
+                      {/* Sign In Dropdown */}
+                      <div className="relative group">
+                        <button className="text-sm font-medium text-gray-700 hover:text-sky-600 transition">
+                          Sign in
+                        </button>
+                        <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                          <a href="/user/login" className="block px-4 py-2 hover:bg-sky-50">
+                            User Login
+                          </a>
+                          <a href="/vendor/login" className="block px-4 py-2 hover:bg-sky-50">
+                            Vendor Login
+                          </a>
+                        </div>
+                      </div>
 
-      <span className="h-6 w-px bg-gray-200" />
+                      <span className="h-6 w-px bg-gray-200" />
 
-      {/* Signup Dropdown */}
-      <div className="relative group">
-        <button className="text-sm font-medium text-gray-700 hover:text-sky-600 transition">
-          Create account
-        </button>
-        <div className="absolute right-0 mt-2 w-44 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-          <a href="/user/signup" className="block px-4 py-2 hover:bg-sky-50">
-            User Signup
-          </a>
-          <a href="/vendor/signup" className="block px-4 py-2 hover:bg-sky-50">
-            Vendor Signup
-          </a>
-        </div>
-      </div>
-    </>
-  ) : (
-    /* USER PROFILE DROPDOWN */
-    <div className="relative group">
-      <button className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-sky-600">
-        👤 {user.name || "Account"}
-      </button>
+                      {/* Signup Dropdown */}
+                      <div className="relative group">
+                        <button className="text-sm font-medium text-gray-700 hover:text-sky-600 transition">
+                          Create account
+                        </button>
+                        <div className="absolute right-0 mt-2 w-44 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                          <a href="/user/signup" className="block px-4 py-2 hover:bg-sky-50">
+                            User Signup
+                          </a>
+                          <a href="/vendor/signup" className="block px-4 py-2 hover:bg-sky-50">
+                            Vendor Signup
+                          </a>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* USER PROFILE DROPDOWN */
+                    <div className="relative group">
+                      <button className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+                        👤 {user.profile?.name || user.user_metadata?.username || user.user_metadata?.name || "Account"}
+                      </button>
 
-      <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-        <a href="/profile" className="block px-4 py-2 hover:bg-sky-50">
-          My Profile
-        </a>
-        <a href="/orders" className="block px-4 py-2 hover:bg-sky-50">
-          Orders
-        </a>
-        <button
-          onClick={() => {
-            localStorage.removeItem("user");
-            window.location.href = "/";
-          }}
-          className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
-  )}
+                      <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                        <a href="/profile" className="block px-4 py-2 hover:bg-sky-50">
+                          My Profile
+                        </a>
+                        <a href="/orders" className="block px-4 py-2 hover:bg-sky-50">
+                          Orders
+                        </a>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await supabase.auth.signOut();
+                              localStorage.removeItem("user");
+                              localStorage.removeItem("vendor");
+                              window.dispatchEvent(new Event("user-session-change"));
+                              window.location.href = "/";
+                            } catch (err) {
+                              console.error("Logout error:", err);
+                              // Fallback cleanup if signOut fails
+                              localStorage.removeItem("user");
+                              window.location.href = "/";
+                            }
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
-</div>
+                </div>
 
 
                 <div className="hidden lg:ml-8 lg:flex">
@@ -555,12 +600,16 @@ export default function Navigation() {
 
                 {/* Cart */}
                 <div className="ml-4 flow-root lg:ml-6">
-                  <a href="#" className="group -m-2 flex items-center p-2">
+                  <a href="/cart" className="group -m-2 flex items-center p-2 relative">
                     <ShoppingBagIcon
                       aria-hidden="true"
                       className="size-6 shrink-0 text-gray-400 group-hover:text-sky-600 transition-colors duration-200"
                     />
-                    <span className="ml-2 text-sm font-medium text-gray-700 group-hover:text-sky-600 transition-colors duration-200">0</span>
+
+                    {/* Dynamic Cart Count */}
+                    <span className="ml-2 text-sm font-medium text-gray-700 group-hover:text-sky-600 transition-colors duration-200">
+                      {cartCount}
+                    </span>
                     <span className="sr-only">items in cart, view bag</span>
                   </a>
                 </div>

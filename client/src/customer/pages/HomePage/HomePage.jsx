@@ -1,13 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import MainCarousel from '../../components/HomeCarousel/MainCarousel';
 import HomeSectionCarousel from '../../components/HomeSectionCarousel/HomeSectionCarousel';
 import PromotionalBanner from '../../components/PromotionalBanner/PromotionalBanner';
 import Footer from '../../components/Footer/Footer';
 import CategorySection from '../../components/CategorySection/CategorySection';
 import TrustSection from '../../components/TrustSection/TrustSection';
-import { mensKurta, shoes, saree, womenDress, allProducts } from '../../../data/products';
+import supabase from '../../../utils/supabaseClient';
+import { allProducts } from '../../../data/products'; // Keep for Trending fallback if needed
 
 export default function HomePage() {
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        const loadCategories = async () => {
+            // 1. Check Cache
+            const cached = localStorage.getItem("categories_cache");
+            if (cached) {
+                const { data, timestamp } = JSON.parse(cached);
+                const isFresh = Date.now() - timestamp < 60 * 60 * 1000; // 1 hr
+                if (isFresh) {
+                    setCategories(data);
+                    return;
+                }
+            }
+
+            // 2. Fetch if no cache or stale
+            const { data, error } = await supabase.from('categories').select('*');
+            if (error) console.error("Error fetching categories:", error);
+
+            if (data) {
+                setCategories(data);
+                // 3. Set Cache
+                localStorage.setItem("categories_cache", JSON.stringify({
+                    data: data,
+                    timestamp: Date.now()
+                }));
+            }
+        };
+        loadCategories();
+    }, []);
+
     return (
         <div className="bg-sky-50">
             {/* Main Banner Carousel */}
@@ -21,20 +53,24 @@ export default function HomePage() {
 
             {/* Trending Section - High Demand Products Only */}
             <div className="space-y-8 py-8 px-4 lg:px-8">
+                {/* Global Trending (Mixed) */}
                 <HomeSectionCarousel
                     data={allProducts}
                     sectionName="Trending Now 🔥"
                     showOnlyTrending={true}
                 />
 
-                {/* Category Sections - Sorted by Demand */}
-                <HomeSectionCarousel data={mensKurta} sectionName="Men's Collection" />
-                <HomeSectionCarousel data={womenDress} sectionName="Women's Fashion" />
-
+                {/* Promotional Banner - Moved here as requested */}
                 <PromotionalBanner />
 
-                <HomeSectionCarousel data={saree} sectionName="Traditional Sarees" />
-                <HomeSectionCarousel data={shoes} sectionName="Footwear Collection" />
+                {/* Dynamic Category Sections */}
+                {categories.map((category) => (
+                    <HomeSectionCarousel
+                        key={category.id}
+                        categoryId={category.id}
+                        sectionName={`${category.name} Collection`}
+                    />
+                ))}
             </div>
 
             {/* Deal Section */}
