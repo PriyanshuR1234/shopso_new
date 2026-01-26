@@ -23,41 +23,45 @@ export default function HomeSectionCarousel({ data, categoryId, sectionName, sho
             demand: p.sold || 0,
             imageUrl: p.product_images?.[0]?.image_url || "https://placehold.jp/400x500.png?text=No%20Image",
             vendor_id: p.vendor_id,
+            is_trending: p.is_trending,
         };
     };
 
     useEffect(() => {
-        if (categoryId) {
-            const fetchProducts = async () => {
-                const { data: products } = await supabase
-                    .from('products')
-                    .select('*, product_images(*)')
-                    .eq('category_id', categoryId)
-                    .limit(10);
+        const fetchProducts = async () => {
+            try {
+                let query = supabase.from('products').select('*, product_images(*)');
 
+                if (showOnlyTrending) {
+                    // Fetch manually marked trending products prioritized, then by sales
+                    query = query.filter('is_trending', 'eq', true).limit(15);
+                } else if (categoryId) {
+                    query = query.eq('category_id', categoryId).limit(10);
+                } else {
+                    return; // Nothing to fetch
+                }
+
+                const { data: products, error } = await query;
+                if (error) throw error;
                 if (products) {
                     setFetchedProducts(products.map(mapProduct));
                 }
-            };
-            fetchProducts();
-        }
-    }, [categoryId]);
+            } catch (err) {
+                console.error("HomeSectionCarousel Fetch Error:", err);
+            }
+        };
+        fetchProducts();
+    }, [categoryId, showOnlyTrending]);
 
     // Process data: Use passed data OR fetched data
     const finalData = data || fetchedProducts;
 
-    // Filter for trending if requested, then sort by demand
     const processedData = useMemo(() => {
         let items = finalData || [];
-        if (showOnlyTrending) {
-            // If fetching trending dynamically, we might need a different query, 
-            // but for now relying on utility if 'data' is passed or if we just want to filter the fetched set.
-            // Note: getTrendingProducts util expects a large list to filter from.
-            // If we fetched specific category, we might not want to filter further unless requested.
-            items = getTrendingProducts(items);
-        }
+        // If we already fetched trending specifically, we don't need to filter by threshold again
+        // as the DB query already handled it. Just sort.
         return sortByDemand(items);
-    }, [finalData, showOnlyTrending]);
+    }, [finalData]);
 
     const scroll = (direction) => {
         if (scrollContainerRef.current) {

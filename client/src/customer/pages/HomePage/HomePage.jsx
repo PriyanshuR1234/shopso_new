@@ -6,7 +6,6 @@ import Footer from '../../components/Footer/Footer';
 import CategorySection from '../../components/CategorySection/CategorySection';
 import TrustSection from '../../components/TrustSection/TrustSection';
 import supabase from '../../../utils/supabaseClient';
-import { allProducts } from '../../../data/products'; // Keep for Trending fallback if needed
 
 export default function HomePage() {
     const [categories, setCategories] = useState([]);
@@ -55,7 +54,6 @@ export default function HomePage() {
             <div className="space-y-8 py-8 px-4 lg:px-8">
                 {/* Global Trending (Mixed) */}
                 <HomeSectionCarousel
-                    data={allProducts}
                     sectionName="Trending Now 🔥"
                     showOnlyTrending={true}
                 />

@@ -22,15 +22,15 @@ export default function ProductCard({ product }) {
                         e.target.src = 'https://placehold.jp/400x500.png?text=No%20Image';
                     }}
                 />
-                {product.discountPersent && (
-                    <div className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-pink-600 text-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-xs font-bold rounded-md shadow-lg animate-pulse z-10">
-                        {product.discountPersent}% OFF
+                {product.discountPercent > 0 && (
+                    <div className="absolute top-3 left-3 bg-rose-500 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-r-lg rounded-tl-lg shadow-xl z-10 border-l-2 border-white/50">
+                        {product.discountPercent}% OFF
                     </div>
                 )}
                 {/* Trending Badge */}
-                {product.demand >= 70 && (
-                    <div className="absolute top-2 right-2 glass-blue px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-xs font-bold rounded-md z-10">
-                        ⭐ TRENDING
+                {product.is_trending && (
+                    <div className="absolute top-3 right-3 bg-sky-500/90 backdrop-blur-md text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-l-lg rounded-tr-lg z-10 border-r-2 border-white/50 flex items-center gap-1 shadow-xl shadow-sky-500/20">
+                        <span className="text-yellow-400">★</span> TRENDING
                     </div>
                 )}
                 {/* Gradient overlay on hover */}

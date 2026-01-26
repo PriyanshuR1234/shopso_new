@@ -17,7 +17,7 @@ const features = [
             </svg>
         ),
         title: "100% Money Back",
-        description: "30 Days Return Policy"
+        description: "7 Days Return Policy"
     },
     {
         icon: (

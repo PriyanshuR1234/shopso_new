@@ -12,7 +12,7 @@ export const TRENDING_THRESHOLD = 70;
  * @returns {boolean} - True if demand >= threshold
  */
 export const isTrending = (product, threshold = TRENDING_THRESHOLD) => {
-    return (product.demand || 0) >= threshold;
+    return product.is_trending || (product.demand || 0) >= threshold;
 };
 
 /**

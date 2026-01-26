@@ -18,7 +18,7 @@ import {
   TabPanel,
   TabPanels,
 } from '@headlessui/react'
-import { Bars3Icon, MagnifyingGlassIcon, ShoppingBagIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, MagnifyingGlassIcon, ShoppingBagIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 
 const navigation = {
   categories: [
@@ -44,39 +44,39 @@ const navigation = {
           id: 'clothing',
           name: 'Clothing',
           items: [
-            { name: 'Tops', href: '#' },
+            { name: 'Tops', href: '/search?q=women tops' },
             { name: 'Dresses', href: '/women/clothing/women_dress' },
             { name: 'Sarees', href: '/women/clothing/saree' },
-            { name: 'Pants', href: '#' },
-            { name: 'Denim', href: '#' },
-            { name: 'Sweaters', href: '#' },
-            { name: 'T-Shirts', href: '#' },
-            { name: 'Jackets', href: '#' },
-            { name: 'Activewear', href: '#' },
-            { name: 'Browse All', href: '/women/clothing/women_dress' },
+            { name: 'Pants', href: '/search?q=women pants' },
+            { name: 'Denim', href: '/search?q=women denim' },
+            { name: 'Sweaters', href: '/search?q=women sweaters' },
+            { name: 'T-Shirts', href: '/search?q=women t-shirts' },
+            { name: 'Jackets', href: '/search?q=women jackets' },
+            { name: 'Activewear', href: '/search?q=women activewear' },
+            { name: 'Browse All', href: '/Fashion' },
           ],
         },
         {
           id: 'accessories',
           name: 'Accessories',
           items: [
-            { name: 'Watches', href: '#' },
-            { name: 'Wallets', href: '#' },
-            { name: 'Bags', href: '#' },
-            { name: 'Sunglasses', href: '#' },
-            { name: 'Hats', href: '#' },
-            { name: 'Belts', href: '#' },
+            { name: 'Watches', href: '/search?q=women watches' },
+            { name: 'Wallets', href: '/search?q=women wallets' },
+            { name: 'Bags', href: '/search?q=women bags' },
+            { name: 'Sunglasses', href: '/search?q=women sunglasses' },
+            { name: 'Hats', href: '/search?q=women hats' },
+            { name: 'Belts', href: '/search?q=women belts' },
           ],
         },
         {
           id: 'brands',
           name: 'Brands',
           items: [
-            { name: 'Full Nelson', href: '#' },
-            { name: 'My Way', href: '#' },
-            { name: 'Re-Arranged', href: '#' },
-            { name: 'Counterfeit', href: '#' },
-            { name: 'Significant Other', href: '#' },
+            { name: 'Full Nelson', href: '/search?q=Full Nelson' },
+            { name: 'My Way', href: '/search?q=My Way' },
+            { name: 'Re-Arranged', href: '/search?q=Re-Arranged' },
+            { name: 'Counterfeit', href: '/search?q=Counterfeit' },
+            { name: 'Significant Other', href: '/search?q=Significant Other' },
           ],
         },
       ],
@@ -106,13 +106,13 @@ const navigation = {
           name: 'Clothing',
           items: [
             { name: 'Mens Kurtas', href: '/men/clothing/mens_kurta' },
-            { name: 'Tops', href: '#' },
-            { name: 'Pants', href: '#' },
-            { name: 'Sweaters', href: '#' },
-            { name: 'T-Shirts', href: '#' },
-            { name: 'Jackets', href: '#' },
-            { name: 'Activewear', href: '#' },
-            { name: 'Browse All', href: '#' },
+            { name: 'Tops', href: '/search?q=mens tops' },
+            { name: 'Pants', href: '/search?q=mens pants' },
+            { name: 'Sweaters', href: '/search?q=mens sweaters' },
+            { name: 'T-Shirts', href: '/search?q=mens t-shirts' },
+            { name: 'Jackets', href: '/search?q=mens jackets' },
+            { name: 'Activewear', href: '/search?q=mens activewear' },
+            { name: 'Browse All', href: '/Fashion' },
           ],
         },
         {
@@ -120,30 +120,30 @@ const navigation = {
           name: 'Footwear',
           items: [
             { name: 'Shoes', href: '/men/footwear/shoes' },
-            { name: 'Sneakers', href: '#' },
-            { name: 'Boots', href: '#' },
+            { name: 'Sneakers', href: '/search?q=mens sneakers' },
+            { name: 'Boots', href: '/search?q=mens boots' },
           ],
         },
         {
           id: 'accessories',
           name: 'Accessories',
           items: [
-            { name: 'Watches', href: '#' },
-            { name: 'Wallets', href: '#' },
-            { name: 'Bags', href: '#' },
-            { name: 'Sunglasses', href: '#' },
-            { name: 'Hats', href: '#' },
-            { name: 'Belts', href: '#' },
+            { name: 'Watches', href: '/search?q=mens watches' },
+            { name: 'Wallets', href: '/search?q=mens wallets' },
+            { name: 'Bags', href: '/search?q=mens bags' },
+            { name: 'Sunglasses', href: '/search?q=mens sunglasses' },
+            { name: 'Hats', href: '/search?q=mens hats' },
+            { name: 'Belts', href: '/search?q=mens belts' },
           ],
         },
         {
           id: 'brands',
           name: 'Brands',
           items: [
-            { name: 'Re-Arranged', href: '#' },
-            { name: 'Counterfeit', href: '#' },
-            { name: 'Full Nelson', href: '#' },
-            { name: 'My Way', href: '#' },
+            { name: 'Re-Arranged', href: '/search?q=Re-Arranged' },
+            { name: 'Counterfeit', href: '/search?q=Counterfeit' },
+            { name: 'Full Nelson', href: '/search?q=Full Nelson' },
+            { name: 'My Way', href: '/search?q=My Way' },
           ],
         },
       ],
@@ -165,6 +165,7 @@ export default function Navigation() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [cartCount, setCartCount] = useState(0);
 
+  const [expandedMobileSection, setExpandedMobileSection] = useState(null)
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -245,9 +246,9 @@ export default function Navigation() {
   }
 
   return (
-    <div className="bg-white">
+    <>
       {/* Mobile menu */}
-      <Dialog open={open} onClose={setOpen} className="relative z-40 lg:hidden">
+      <Dialog open={open} onClose={setOpen} className="relative z-[100] lg:hidden">
         <DialogBackdrop
           transition
           className="fixed inset-0 bg-black/25 transition-opacity duration-300 ease-linear data-closed:opacity-0"
@@ -294,7 +295,7 @@ export default function Navigation() {
                             src={item.imageSrc}
                             className="aspect-square w-full rounded-lg bg-gray-100 object-cover group-hover:opacity-75"
                           />
-                          <a href={item.href} className="mt-6 block font-medium text-gray-900">
+                          <a href={item.href} onClick={() => setOpen(false)} className="mt-6 block font-medium text-gray-900">
                             <span aria-hidden="true" className="absolute inset-0 z-10" />
                             {item.name}
                           </a>
@@ -304,26 +305,28 @@ export default function Navigation() {
                         </div>
                       ))}
                     </div>
-                    {category.sections.map((section) => (
-                      <div key={section.name}>
-                        <p id={`${category.id}-${section.id}-heading-mobile`} className="font-medium text-gray-900">
-                          {section.name}
-                        </p>
-                        <ul
-                          role="list"
-                          aria-labelledby={`${category.id}-${section.id}-heading-mobile`}
-                          className="mt-6 flex flex-col space-y-6"
-                        >
-                          {section.items.map((item) => (
-                            <li key={item.name} className="flow-root">
-                              <a href={item.href} className="-m-2 block p-2 text-gray-500">
-                                {item.name}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-10 transition-all">
+                      {category.sections.map((section) => (
+                        <div key={section.name}>
+                          <p id={`${category.id}-${section.id}-heading-mobile`} className="text-xs font-black text-gray-900 uppercase tracking-widest border-b pb-2 mb-4">
+                            {section.name}
+                          </p>
+                          <ul
+                            role="list"
+                            aria-labelledby={`${category.id}-${section.id}-heading-mobile`}
+                            className="flex flex-col space-y-4"
+                          >
+                            {section.items.map((item) => (
+                              <li key={item.name} className="flow-root">
+                                <a href={item.href} onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-400 hover:text-sky-600 transition-colors">
+                                  {item.name}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
                   </TabPanel>
                 ))}
               </TabPanels>
@@ -332,24 +335,102 @@ export default function Navigation() {
             <div className="space-y-6 border-t border-gray-200 px-4 py-6">
               {navigation.pages.map((page) => (
                 <div key={page.name} className="flow-root">
-                  <a href={page.href} className="-m-2 block p-2 font-medium text-gray-900">
+                  <a href={page.href} onClick={() => setOpen(false)} className="-m-2 block p-2 font-medium text-gray-900">
                     {page.name}
                   </a>
                 </div>
               ))}
             </div>
 
-            <div className="space-y-6 border-t border-gray-200 px-4 py-6">
-              <div className="flow-root">
-                <a href="#" className="-m-2 block p-2 font-medium text-gray-900">
-                  Sign in
-                </a>
-              </div>
-              <div className="flow-root">
-                <a href="#" className="-m-2 block p-2 font-medium text-gray-900">
-                  Create account
-                </a>
-              </div>
+            <div className="space-y-4 border-t border-gray-200 px-4 py-6">
+              {!user ? (
+                <>
+                  {/* SIGN IN ACCORDION */}
+                  <div className="flow-root">
+                    <button
+                      onClick={() => setExpandedMobileSection(expandedMobileSection === 'signin' ? null : 'signin')}
+                      className="-m-2 flex w-full items-center justify-between p-2 font-medium text-gray-900 transition-colors hover:text-sky-600"
+                    >
+                      <span>Sign in</span>
+                      <ChevronDownIcon className={`size-4 transition-transform duration-200 ${expandedMobileSection === 'signin' ? 'rotate-180 text-sky-600' : 'text-gray-400'}`} />
+                    </button>
+                    {expandedMobileSection === 'signin' && (
+                      <div className="mt-4 space-y-4 pl-4 border-l-2 border-sky-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <a href="/user/login" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-sky-600">
+                          User Login
+                        </a>
+                        <a href="/vendor/login" onClick={() => setOpen(false)} className="block text-sm font-medium text-sky-600 hover:text-sky-700">
+                          Vendor Partner Login
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SIGN UP ACCORDION */}
+                  <div className="flow-root mt-4">
+                    <button
+                      onClick={() => setExpandedMobileSection(expandedMobileSection === 'signup' ? null : 'signup')}
+                      className="-m-2 flex w-full items-center justify-between p-2 font-medium text-gray-900 transition-colors hover:text-sky-600"
+                    >
+                      <span>Create account</span>
+                      <ChevronDownIcon className={`size-4 transition-transform duration-200 ${expandedMobileSection === 'signup' ? 'rotate-180 text-sky-600' : 'text-gray-400'}`} />
+                    </button>
+                    {expandedMobileSection === 'signup' && (
+                      <div className="mt-4 space-y-4 pl-4 border-l-2 border-sky-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <a href="/user/signup" onClick={() => setOpen(false)} className="block text-sm font-medium text-gray-600 hover:text-sky-600">
+                          User Signup
+                        </a>
+                        <a href="/vendor/signup" onClick={() => setOpen(false)} className="block text-sm font-medium text-sky-600 hover:text-sky-700">
+                          Vendor Partner Signup
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flow-root border-b border-gray-50 pb-3 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 font-black text-xs">
+                        {String(user.profile?.name || "U").charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Authenticated</p>
+                        <p className="text-sm font-bold text-gray-900 leading-none">{user.profile?.name || "User Account"}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flow-root">
+                    <a href="/profile" onClick={() => setOpen(false)} className="-m-2 block p-2 font-medium text-gray-900 hover:text-sky-600 transition">
+                      My Profile
+                    </a>
+                  </div>
+                  <div className="flow-root">
+                    <a href="/orders" onClick={() => setOpen(false)} className="-m-2 block p-2 font-medium text-gray-900 hover:text-sky-600 transition">
+                      Orders
+                    </a>
+                  </div>
+                  <div className="flow-root mt-4">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await supabase.auth.signOut();
+                          localStorage.removeItem("user");
+                          localStorage.removeItem("vendor");
+                          window.dispatchEvent(new Event("user-session-change"));
+                          setOpen(false);
+                          window.location.href = "/";
+                        } catch (err) {
+                          console.error("Logout error:", err);
+                        }
+                      }}
+                      className="w-full text-left -m-2 block p-2 font-black text-red-500 uppercase text-[10px] tracking-widest hover:text-red-600 transition"
+                    >
+                      Logout Session
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="border-t border-gray-200 px-4 py-6">
@@ -363,11 +444,11 @@ export default function Navigation() {
         </div>
       </Dialog>
 
-      <header className="relative bg-sky-50/60 backdrop-blur-xl sticky top-0 z-50 border-b border-white/50 shadow-sm transition-all duration-300">
-        <p className="flex h-10 items-center justify-center bg-sky-600 px-4 text-sm font-medium text-white sm:px-6 lg:px-8">
-          Get free delivery on orders over ₹1000
-        </p>
+      <p className="flex h-10 items-center justify-center bg-sky-600 px-4 text-sm font-medium text-white sm:px-6 lg:px-8">
+        Get free delivery on orders over ₹1000
+      </p>
 
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm transition-all duration-300">
         <nav aria-label="Top" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="border-b border-gray-200">
             <div className="flex h-16 items-center">
@@ -382,8 +463,8 @@ export default function Navigation() {
               </button>
 
               {/* Logo */}
-              <div className="ml-4 flex lg:ml-0">
-                <a href="/" className="group block h-16 w-29 overflow-hidden ">
+              <div className="ml-3  flex lg:ml-0">
+                <a href="/" className="group block h-16 w-29 rounded-3xl overflow-hidden ">
                   <span className="sr-only">Shopso</span>
                   <video
                     src="/download_20260114_233647_0000.mp4"
@@ -401,68 +482,72 @@ export default function Navigation() {
                 <div className="flex h-full space-x-8">
                   {navigation.categories.map((category) => (
                     <Popover key={category.name} className="flex">
-                      <div className="relative flex">
-                        <PopoverButton className="group relative flex items-center justify-center text-sm font-medium text-gray-700 transition-colors duration-200 ease-out hover:text-gray-800 data-open:text-sky-600">
-                          {category.name}
-                          <span
-                            aria-hidden="true"
-                            className="absolute inset-x-0 -bottom-px z-30 h-0.5 transition duration-200 ease-out group-data-open:bg-sky-600"
-                          />
-                        </PopoverButton>
-                      </div>
-                      <PopoverPanel
-                        transition
-                        className="absolute inset-x-0 top-full z-20 w-full bg-white text-sm text-gray-500 transition data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
-                      >
-                        {/* Presentational element used to render the bottom shadow, if we put the shadow on the actual panel it pokes out the top, so we use this shorter element to hide the top of the shadow */}
-                        <div aria-hidden="true" className="absolute inset-0 top-1/2 bg-white shadow-sm" />
-                        <div className="relative bg-white">
-                          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-10 py-16">
-                              <div className="col-start-2 grid grid-cols-2 gap-x-8">
-                                {category.featured.map((item) => (
-                                  <div key={item.name} className="group relative text-base sm:text-sm">
-                                    <img
-                                      alt={item.imageAlt}
-                                      src={item.imageSrc}
-                                      className="aspect-square w-full rounded-lg bg-gray-100 object-cover group-hover:opacity-75"
-                                    />
-                                    <a href={item.href} className="mt-6 block font-medium text-gray-900">
-                                      <span aria-hidden="true" className="absolute inset-0 z-10" />
-                                      {item.name}
-                                    </a>
-                                    <p aria-hidden="true" className="mt-1">
-                                      Shop now
-                                    </p>
+                      {({ open, close }) => (
+                        <div onMouseLeave={() => open && close()} className="flex">
+                          <div className="relative flex">
+                            <PopoverButton className="group relative flex items-center justify-center text-sm font-medium text-gray-700 transition-colors duration-200 ease-out hover:text-gray-800 data-open:text-sky-600">
+                              {category.name}
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-x-0 -bottom-px z-30 h-0.5 transition duration-200 ease-out group-data-open:bg-sky-600"
+                              />
+                            </PopoverButton>
+                          </div>
+                          <PopoverPanel
+                            transition
+                            className="absolute inset-x-0 top-full z-20 w-full bg-white text-sm text-gray-500 transition data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out data-leave:duration-150 data-leave:ease-in"
+                          >
+                            {/* Presentational element used to render the bottom shadow, if we put the shadow on the actual panel it pokes out the top, so we use this shorter element to hide the top of the shadow */}
+                            <div aria-hidden="true" className="absolute inset-0 top-1/2 bg-white shadow-sm" />
+                            <div className="relative bg-white">
+                              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-10 py-16">
+                                  <div className="col-start-2 grid grid-cols-2 gap-x-8">
+                                    {category.featured.map((item) => (
+                                      <div key={item.name} className="group relative text-base sm:text-sm">
+                                        <img
+                                          alt={item.imageAlt}
+                                          src={item.imageSrc}
+                                          className="aspect-square w-full rounded-lg bg-gray-100 object-cover group-hover:opacity-75"
+                                        />
+                                        <a href={item.href} className="mt-6 block font-medium text-gray-900">
+                                          <span aria-hidden="true" className="absolute inset-0 z-10" />
+                                          {item.name}
+                                        </a>
+                                        <p aria-hidden="true" className="mt-1">
+                                          Shop now
+                                        </p>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                              <div className="row-start-1 grid grid-cols-3 gap-x-8 gap-y-10 text-sm">
-                                {category.sections.map((section) => (
-                                  <div key={section.name}>
-                                    <p id={`${section.name}-heading`} className="font-medium text-gray-900">
-                                      {section.name}
-                                    </p>
-                                    <ul
-                                      role="list"
-                                      aria-labelledby={`${section.name}-heading`}
-                                      className="mt-6 space-y-6 sm:mt-4 sm:space-y-4"
-                                    >
-                                      {section.items.map((item) => (
-                                        <li key={item.name} className="flex">
-                                          <a href={item.href} className="hover:text-gray-800">
-                                            {item.name}
-                                          </a>
-                                        </li>
-                                      ))}
-                                    </ul>
+                                  <div className="row-start-1 grid grid-cols-3 gap-x-8 gap-y-10 text-sm">
+                                    {category.sections.map((section) => (
+                                      <div key={section.name}>
+                                        <p id={`${section.name}-heading`} className="font-medium text-gray-900">
+                                          {section.name}
+                                        </p>
+                                        <ul
+                                          role="list"
+                                          aria-labelledby={`${section.name}-heading`}
+                                          className="mt-6 space-y-6 sm:mt-4 sm:space-y-4"
+                                        >
+                                          {section.items.map((item) => (
+                                            <li key={item.name} className="flex">
+                                              <a href={item.href} className="hover:text-gray-800">
+                                                {item.name}
+                                              </a>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          </PopoverPanel>
                         </div>
-                      </PopoverPanel>
+                      )}
                     </Popover>
                   ))}
                   {navigation.pages.map((page) => (
@@ -618,6 +703,6 @@ export default function Navigation() {
           </div>
         </nav>
       </header>
-    </div>
+    </>
   )
 }

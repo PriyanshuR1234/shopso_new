@@ -9,8 +9,10 @@ import AdminAnalytics from "./components/AdminAnalytics";
 import AdminDelivery from "./components/AdminDelivery";
 import AdminNotifications from "./components/AdminNotifications";
 import PlatformSettings from "./components/PlatformSettings";
+import AdminBanners from "./AdminBanners";
+import AdminTrending from "./AdminTrending";
 
-const tabs = ["vendors", "orders", "analytics", "delivery", "alerts", "settings"];
+const tabs = ["vendors", "orders", "analytics", "delivery", "alerts", "banners", "trending", "settings"];
 
 export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState("vendors");
@@ -363,6 +365,14 @@ export default function SuperAdmin() {
 
           {activeTab === "settings" && (
             <PlatformSettings />
+          )}
+
+          {activeTab === "banners" && (
+            <AdminBanners />
+          )}
+
+          {activeTab === "trending" && (
+            <AdminTrending />
           )}
         </main>
       </div>
