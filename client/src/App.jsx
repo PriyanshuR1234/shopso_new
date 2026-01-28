@@ -10,6 +10,9 @@ import UserProfile from "./customer/pages/UserProfile";
 import UserOrders from "./customer/pages/UserOrders";
 import UserOrderDetails from "./customer/pages/UserOrderDetails";
 import SuperAdmin from "./vendor/pages/admin/SuperAdmin";
+import ForgotPassword from "./customer/pages/Auth/ForgotPassword";
+import ResetPassword from "./customer/pages/Auth/ResetPassword";
+import VerifyPhone from "./customer/pages/VerifyPhone";
 
 import HomePage from './customer/pages/HomePage/HomePage';
 import Navigation from './customer/Navigation';
@@ -94,7 +97,25 @@ const App = () => {
           .eq("id", session.user.id)
           .single();
 
-        if (profile) {
+        // If no profile exists (e.g., Google OAuth user), create one
+        if (!profile) {
+          const { data: newProfile } = await supabase
+            .from("users")
+            .insert({
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || "User",
+              role: session.user.user_metadata?.role || "customer",
+            })
+            .select()
+            .single();
+
+          if (newProfile) {
+            const fullUser = { ...session.user, profile: newProfile };
+            localStorage.setItem("user", JSON.stringify(fullUser));
+            window.dispatchEvent(new Event("user-session-change"));
+          }
+        } else {
           const fullUser = { ...session.user, profile };
           localStorage.setItem("user", JSON.stringify(fullUser));
           window.dispatchEvent(new Event("user-session-change"));
@@ -138,6 +159,9 @@ const App = () => {
 
           <Route path="/user/login" element={<UserLogin />} />
           <Route path="/user/signup" element={<UserSignup />} />
+          <Route path="/user/forgot-password" element={<ForgotPassword />} />
+          <Route path="/user/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-phone" element={<VerifyPhone />} />
           <Route path="/profile" element={<UserProfile />} />
 
           <Route path="/orders" element={<UserOrders />} />

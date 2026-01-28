@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { loginAndGetVendor } from "../../api/auth";
+import { loginAndGetVendor, signInWithGoogle } from "../../api/auth";
 import supabase from "../../utils/supabaseClient";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function VendorLogin() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ export default function VendorLogin() {
     });
 
     if (error) {
-      alert("Invalid credentials");
+      toast.error("Invalid credentials");
       setLoading(false);
       return;
     }
@@ -33,7 +34,21 @@ export default function VendorLogin() {
       .single();
 
     if (vErr || !vendor) {
-      alert("You are not registered as vendor.");
+      // Check if this is a Google OAuth user without vendor profile
+      const { data: userProfile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      // If user exists but no vendor profile, redirect to vendor onboarding
+      if (userProfile && userProfile.role === "vendor") {
+        toast.error("Please complete vendor registration.");
+        window.location.href = "/vendor/signup";
+        return;
+      }
+
+      toast.error("You are not registered as vendor.");
       setLoading(false);
       return;
     }
@@ -41,7 +56,7 @@ export default function VendorLogin() {
     // ALLOW PENDING LOGIN - Dashboard will handle the "Pending" screen
     /*
     if (vendor.status !== "approved") {
-      alert("Vendor approval pending.");
+      toast.error("Vendor approval pending.");
       setLoading(false);
       return;
     }
@@ -65,14 +80,10 @@ export default function VendorLogin() {
 
 
   const googleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/vendor/onboarding`,
-      },
-    });
-
-    if (error) alert("Google login failed");
+    const { error } = await signInWithGoogle("vendor");
+    if (error) {
+      toast.error(error.message || "Google login failed");
+    }
   };
 
   return (
@@ -98,6 +109,12 @@ export default function VendorLogin() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full p-3 border rounded-lg"
           />
+
+          <div className="flex justify-end">
+            <Link to="/user/forgot-password" size="sm" className="text-sm text-sky-600 hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
 
           <button
             type="submit"

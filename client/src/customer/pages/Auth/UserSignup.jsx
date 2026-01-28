@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import supabase from "../../../utils/supabaseClient";
+import { signInWithGoogle } from "../../../api/auth";
 import toast from "react-hot-toast";
 
 export default function UserSignup() {
@@ -11,6 +12,8 @@ export default function UserSignup() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState(""); // Added Username
   const [loading, setLoading] = useState(false);
+
+  const [confirmed, setConfirmed] = useState(false);
 
   const signup = async (e) => {
     e.preventDefault();
@@ -24,6 +27,7 @@ export default function UserSignup() {
         data: {
           name: name,
           username: username,
+          role: "customer"
         }
       }
     });
@@ -38,32 +42,43 @@ export default function UserSignup() {
       return;
     }
 
-    const userId = data.user.id;
-
-    // Insert into user profile table (Optional backup)
-    const { error: dbError } = await supabase.from("users").insert({
-      id: userId,
-      name,
-      email,
-      role: "customer",
+    // Success state - Email confirmation is ON in Supabase
+    setConfirmed(true);
+    toast.success("Account created! Please check your email for verification. 🎉", {
+      duration: 6000
     });
-
-    if (dbError) {
-      console.error("DB Profile Error:", dbError);
-    }
-
-    toast.success("Account created successfully! 🎉");
-    navigate("/user/login");
+    setLoading(false);
   };
 
   const googleSignup = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin },
-    });
-
-    if (error) setMsg("Google signup failed");
+    const { error } = await signInWithGoogle("customer");
+    if (error) {
+      toast.error(error.message || "Google signup failed");
+    }
   };
+
+  if (confirmed) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
+        <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md text-center">
+          <div className="text-6xl mb-6">📧</div>
+          <h1 className="text-3xl font-extrabold mb-4 bg-gradient-to-r from-sky-600 to-blue-600 text-transparent bg-clip-text">
+            Verify Your Email
+          </h1>
+          <p className="text-gray-600 mb-8">
+            We've sent a confirmation link to <span className="font-semibold text-gray-800">{email}</span>.
+            Please check your inbox and click the link to activate your account.
+          </p>
+          <button
+            onClick={() => navigate("/user/login")}
+            className="w-full bg-gradient-to-r from-sky-600 to-blue-600 text-white p-3 rounded-xl hover:shadow-lg transition font-semibold"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">

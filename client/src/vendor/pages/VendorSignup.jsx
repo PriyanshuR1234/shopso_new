@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { vendorSignup } from "../../api/auth";
+import { vendorSignup, signInWithGoogle } from "../../api/auth";
 import supabase from "../../utils/supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -18,6 +18,8 @@ export default function VendorSignup() {
 
   const [aadhaarImage, setAadhaarImage] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const [confirmed, setConfirmed] = useState(false);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -61,8 +63,8 @@ export default function VendorSignup() {
       if (error) {
         toast.error(error);
       } else {
-        toast.success("Vendor registered! Pending admin approval.");
-        navigate("/vendor/login");
+        setConfirmed(true);
+        toast.success("Registration initiated! Please verify your email. 🎉");
       }
     } catch (err) {
       console.error("Signup exception:", err);
@@ -71,6 +73,29 @@ export default function VendorSignup() {
       setLoading(false);
     }
   };
+
+  if (confirmed) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
+        <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md text-center">
+          <div className="text-6xl mb-6">📬</div>
+          <h1 className="text-3xl font-extrabold mb-4 text-gray-900">
+            Verify Vendor Email
+          </h1>
+          <p className="text-gray-600 mb-8">
+            Step 1 complete! We've sent a verification link to <span className="font-semibold">{form.email}</span>.
+            Once verified, your profile will be reviewed by admin.
+          </p>
+          <button
+            onClick={() => navigate("/vendor/login")}
+            className="w-full bg-black text-white p-3 rounded-xl hover:bg-gray-800 transition font-semibold"
+          >
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-6">
@@ -180,9 +205,33 @@ export default function VendorSignup() {
           </button>
         </form>
 
+        <div className="relative my-6">
+          <div className="border-t border-gray-200"></div>
+          <p className="text-center text-sm text-gray-500 -mt-3 bg-white w-fit mx-auto px-2">
+            OR
+          </p>
+        </div>
+
+        <button
+          onClick={async () => {
+            const { error } = await signInWithGoogle("vendor");
+            if (error) {
+              toast.error(error.message || "Google signup failed");
+            }
+          }}
+          className="w-full flex items-center justify-center gap-3 border border-gray-300 p-3 rounded-xl hover:bg-gray-50 transition shadow-sm mb-4"
+        >
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            alt="google"
+            className="w-5 h-5"
+          />
+          <span className="font-medium">Sign up with Google</span>
+        </button>
+
         <p className="text-center text-gray-600 mt-4">
           Already registered?{" "}
-          <Link to="/vendor/login" className="text-sky-600 font-semibold">Login</Link>
+          <Link to="/vendor/login" className="text-sky-600 font-semibold hover:underline">Login</Link>
         </p>
       </div>
     </div>

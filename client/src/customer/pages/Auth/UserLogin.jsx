@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import supabase from "../../../utils/supabaseClient";
+import { signInWithGoogle } from "../../../api/auth";
 
 export default function UserLogin() {
   const navigate = useNavigate();
@@ -35,6 +36,28 @@ export default function UserLogin() {
 
     if (!profileErr && profileData) {
       profile = profileData;
+    } else if (profileErr && profileErr.code === 'PGRST116') {
+      // Profile doesn't exist (common for Google OAuth users) - create it
+      const { data: newProfile } = await supabase
+        .from("users")
+        .insert({
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.user_metadata?.name || data.user.user_metadata?.full_name || "User",
+          role: data.user.user_metadata?.role || "customer",
+        })
+        .select()
+        .single();
+
+      if (newProfile) {
+        profile = newProfile;
+      } else {
+        console.warn("Failed to create profile, using metadata fallback");
+        profile = {
+          role: data.user.user_metadata?.role || "customer",
+          name: data.user.user_metadata?.name || data.user.user_metadata?.username || "User"
+        };
+      }
     } else {
       console.warn("Profile fetch failed, using metadata fallback:", profileErr);
       profile = {
@@ -64,14 +87,10 @@ export default function UserLogin() {
   };
 
   const googleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-
-    if (error) toast.error("Google login failed");
+    const { error } = await signInWithGoogle("customer");
+    if (error) {
+      toast.error(error.message || "Google login failed");
+    }
   };
 
   return (
@@ -98,6 +117,12 @@ export default function UserLogin() {
             required
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          <div className="flex justify-end">
+            <Link to="/user/forgot-password" size="sm" className="text-sm text-sky-600 hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
 
           <button
             disabled={loading}

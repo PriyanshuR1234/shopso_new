@@ -12,6 +12,7 @@ export default function Checkout() {
     const [address, setAddress] = useState("");
     const [city, setCity] = useState("");
     const [zip, setZip] = useState("");
+    const [phone, setPhone] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("COD"); // COD, Online
     const [isAddressConfirmed, setIsAddressConfirmed] = useState(false);
     const [isEditingAddress, setIsEditingAddress] = useState(false);
@@ -24,7 +25,7 @@ export default function Checkout() {
         }
         setCartItems(items);
 
-        // Pre-fill address from profile
+        // Check phone verification status FIRST
         if (user) {
             supabase
                 .from("users")
@@ -32,10 +33,19 @@ export default function Checkout() {
                 .eq("id", user.id)
                 .single()
                 .then(({ data }) => {
+                    // Check if phone is verified
+                    if (!data?.phone_verified) {
+                        toast.error("Please verify your phone number before placing orders");
+                        navigate("/verify-phone?redirect=checkout");
+                        return;
+                    }
+
+                    // Pre-fill address from profile
                     if (data && (data.address || data.city)) {
                         setAddress(data.address || "");
                         setCity(data.city || "");
                         setZip(data.zip || "");
+                        setPhone(data.phone || "");
                         setIsAddressConfirmed(true); // Default to confirmed if it exists
                     } else {
                         setIsEditingAddress(true); // Show form if no address saved
@@ -171,6 +181,9 @@ export default function Checkout() {
                                         <h3 className="font-bold text-gray-800">Saved Address</h3>
                                         <p className="text-gray-600 mt-1">{address}</p>
                                         <p className="text-gray-600">{city} - {zip}</p>
+                                        <p className="text-gray-600 flex items-center gap-2 mt-1">
+                                            <span className="text-green-600">✓</span> Phone: {phone}
+                                        </p>
                                     </div>
                                     <button
                                         onClick={() => { setIsEditingAddress(true); setIsAddressConfirmed(false); }}

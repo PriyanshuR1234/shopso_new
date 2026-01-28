@@ -8,7 +8,6 @@ export default function UserProfile() {
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
@@ -17,6 +16,8 @@ export default function UserProfile() {
     state: "",
     zip: "",
   });
+
+  const [phoneVerified, setPhoneVerified] = useState(false);
 
   if (!user) {
     window.location.href = "/user/login";
@@ -35,9 +36,50 @@ export default function UserProfile() {
         .eq("id", user.id)
         .single();
 
-      if (error) throw error;
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist - create it (common for OAuth users)
+        console.log("Profile not found, creating one...");
 
-      if (data) {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+
+        // Use UPSERT instead of INSERT to preserve any existing data (like verified phone)
+        const { data: newProfile, error: createError } = await supabase
+          .from("users")
+          .upsert({
+            id: authUser.id,
+            email: authUser.email,
+            name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || "User",
+            role: authUser.user_metadata?.role || "customer",
+            // Don't overwrite phone or phone_verified if they already exist
+          }, {
+            onConflict: 'id',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Failed to create profile:", createError);
+          toast.error("Failed to load profile. Please try logging in again.");
+          setLoading(false);
+          return;
+        }
+
+        if (newProfile) {
+          setFormData({
+            name: newProfile.name || "",
+            mobile: newProfile.mobile || newProfile.phone || "",
+            address: newProfile.address || "",
+            city: newProfile.city || "",
+            state: newProfile.state || "",
+            zip: newProfile.zip || "",
+          });
+          setPhoneVerified(newProfile.phone_verified || false);
+          toast.success("Profile loaded successfully!");
+        }
+      } else if (error) {
+        throw error;
+      } else if (data) {
         setFormData({
           name: data.name || "",
           mobile: data.mobile || data.phone || "",
@@ -46,9 +88,11 @@ export default function UserProfile() {
           state: data.state || "",
           zip: data.zip || "",
         });
+        setPhoneVerified(data.phone_verified || false);
       }
     } catch (err) {
       console.error("Profile fetch error", err);
+      toast.error("Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -166,15 +210,40 @@ export default function UserProfile() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Mobile Number</label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                      Mobile Number
+                      {phoneVerified ? (
+                        <div className="flex items-center gap-2 ml-2">
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                            ✓ Verified
+                          </span>
+                          <a
+                            href="/verify-phone?redirect=profile"
+                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full hover:bg-gray-200 transition font-medium"
+                          >
+                            Change
+                          </a>
+                        </div>
+                      ) : (
+                        <a
+                          href="/verify-phone?redirect=profile"
+                          className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full hover:bg-amber-200 transition font-semibold"
+                        >
+                          ⚠ Not Verified - Click to Verify
+                        </a>
+                      )}
+                    </label>
                     <input
                       name="mobile"
-                      disabled={!editMode}
-                      value={formData.mobile}
-                      onChange={handleChange}
-                      placeholder="+91 ...."
-                      className={`w-full p-3 rounded-lg border ${editMode ? "border-sky-300 bg-white" : "border-transparent bg-gray-100"}`}
+                      disabled={true}
+                      value={formData.mobile || "No phone number"}
+                      className="w-full p-3 rounded-lg border border-transparent bg-gray-100 text-gray-700 cursor-not-allowed"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {phoneVerified
+                        ? "Your phone is verified and ready for orders"
+                        : "Phone verification is required to place orders"}
+                    </p>
                   </div>
                 </div>
 

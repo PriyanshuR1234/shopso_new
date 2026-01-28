@@ -159,6 +159,69 @@ export async function vendorSignup({
 }
 
 /* ------------------------------------------------------------------
+   GOOGLE AUTH
+------------------------------------------------------------------ */
+export async function signInWithGoogle(role = "customer") {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}${role === "vendor" ? "/vendor/dashboard" : "/"}`,
+      data: { role }
+    },
+  });
+
+  // Provide more helpful error messages
+  if (error) {
+    if (error.message?.includes("OAuth secret") || error.message?.includes("Unsupported provider")) {
+      return {
+        error: {
+          message: "Google login is not configured. Please contact support or use email/password login."
+        }
+      };
+    }
+    return { error };
+  }
+
+  return { data, error: null };
+}
+
+/* ------------------------------------------------------------------
+   PASSWORD RECOVERY
+------------------------------------------------------------------ */
+export async function resetPasswordRequest(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/user/reset-password`,
+  });
+  return { error };
+}
+
+export async function updatePassword(newPassword) {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+  return { data, error };
+}
+
+/* ------------------------------------------------------------------
+   PHONE OTP (Verification step)
+------------------------------------------------------------------ */
+export async function sendPhoneOTP(phone) {
+  const { error } = await supabase.auth.signInWithOtp({
+    phone: phone,
+  });
+  return { error };
+}
+
+export async function verifyPhoneOTP(phone, token) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    phone,
+    token,
+    type: "sms",
+  });
+  return { data, error };
+}
+
+/* ------------------------------------------------------------------
    LOGOUT
 ------------------------------------------------------------------ */
 export async function logoutUser() {
