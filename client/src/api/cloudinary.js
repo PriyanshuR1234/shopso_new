@@ -5,6 +5,11 @@ export async function uploadImagesToCloudinary(files) {
 
   for (const file of files) {
     try {
+      console.log("Cloudinary Config:", {
+        cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+        preset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+      });
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
@@ -20,7 +25,13 @@ export async function uploadImagesToCloudinary(files) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || "Cloudinary upload failed");
+        const errorMessage = errorData.error?.message || "Cloudinary upload failed";
+
+        if (errorMessage.includes("Upload preset") && errorMessage.includes("not found")) {
+          throw new Error(`Configuration Error: The upload preset '${import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET}' does not exist in your Cloudinary account. Please create it as an "Unsigned" preset.`);
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();

@@ -14,6 +14,8 @@ export default function VendorProfile() {
     const [description, setDescription] = useState("");
     const [address, setAddress] = useState("");
     const [phone, setPhone] = useState("");
+    const [gstNumber, setGstNumber] = useState("");
+    const [aadhaarUrl, setAadhaarUrl] = useState("");
 
     // Images
     const [logoUrl, setLogoUrl] = useState("");
@@ -45,6 +47,8 @@ export default function VendorProfile() {
         setDescription(data.shop_description || "");
         setAddress(data.address || "");
         setPhone(data.phone || "");
+        setGstNumber(data.gst_number || "");
+        setAadhaarUrl(data.aadhaar_url || "");
         setLogoUrl(data.shop_logo || "");
         setBannerUrl(data.shop_banner || "");
 
@@ -92,6 +96,7 @@ export default function VendorProfile() {
                     shop_description: description,
                     address,
                     phone,
+                    gst_number: gstNumber,
                     shop_logo: newLogo,
                     shop_banner: newBanner
                 })
@@ -235,6 +240,43 @@ export default function VendorProfile() {
                             className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="+91 98765 43210"
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="font-semibold text-gray-700">GST Number</label>
+                        <input
+                            value={gstNumber}
+                            onChange={(e) => setGstNumber(e.target.value)}
+                            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none uppercase"
+                            placeholder="22AAAAA0000A1Z5"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="font-semibold text-gray-700 flex items-center gap-2">
+                            Aadhaar Card
+                            <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">✓ Verified</span>
+                        </label>
+                        <div className="relative group">
+                            <input
+                                value="Securely Uploaded - Cannot be edited"
+                                disabled
+                                className="w-full p-3 border rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed"
+                            />
+                            {aadhaarUrl && (
+                                <a
+                                    href={aadhaarUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="absolute right-3 top-3 text-sm text-blue-600 font-medium hover:underline"
+                                >
+                                    View Document
+                                </a>
+                            )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                            * Identity documents are locked for security purposes. Contact Admin to update.
+                        </p>
                     </div>
 
                     <div className="space-y-2 md:col-span-2">

@@ -95,23 +95,18 @@ export default function VerifyPhone() {
             return;
         }
 
-        // Update phone_verified in database using UPSERT to ensure profile exists
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        // Update phone_verified in database using Secure RPC to avoid RLS issues
+        const { error: updateError } = await supabase.rpc("verify_and_update_phone", {
+            p_id: user.id,
+            p_phone: formattedPhone,
+            p_phone_verified: true
+        });
 
-        const { data: updatedProfile, error: updateError } = await supabase
+        // Fetch updated profile for local storage sync
+        const { data: updatedProfile } = await supabase
             .from("users")
-            .upsert({
-                id: user.id,
-                email: authUser.email,
-                name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || "User",
-                role: authUser.user_metadata?.role || "customer",
-                phone: formattedPhone,
-                phone_verified: true
-            }, {
-                onConflict: 'id',
-                ignoreDuplicates: false
-            })
-            .select()
+            .select("*")
+            .eq("id", user.id)
             .single();
 
         setLoading(false);

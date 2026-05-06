@@ -108,6 +108,18 @@ export default function Checkout() {
                 const vendorItems = ordersByVendor[vId];
                 const vendorTotal = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+                // 0. Update User Profile with Address (Ensure it's saved for next time)
+                const { error: profileError } = await supabase
+                    .from("users")
+                    .update({
+                        address: address,
+                        city: city,
+                        zip: zip
+                    })
+                    .eq("id", user.id);
+
+                if (profileError) console.error("Failed to save address to profile:", profileError);
+
                 // 1. Create Order
                 const { data: orderData, error: orderError } = await supabase
                     .from("orders")

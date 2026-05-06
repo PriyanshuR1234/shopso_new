@@ -33,8 +33,8 @@ export default function AdminVendors({ vendors, filter, setFilter, onApprove, on
                             </div>
                             <div className="text-right">
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold inline-block border ${vendor.status === "approved" ? "bg-green-100 text-green-800 border-green-200" :
-                                        vendor.status === "banned" ? "bg-red-100 text-red-800 border-red-200" :
-                                            "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                    vendor.status === "banned" ? "bg-red-100 text-red-800 border-red-200" :
+                                        "bg-yellow-100 text-yellow-800 border-yellow-200"
                                     }`}>
                                     {(vendor.status || "pending").toUpperCase()}
                                 </span>
@@ -75,7 +75,7 @@ export default function AdminVendors({ vendors, filter, setFilter, onApprove, on
                                 className="px-3 md:px-4 py-1 bg-gray-600 text-white rounded font-medium hover:bg-gray-700 text-xs md:text-sm"
                                 onClick={() => setExpandedVendor(expandedVendor === vendor.id ? null : vendor.id)}
                             >
-                                {expandedVendor === vendor.id ? "Hide" : "View"} Products
+                                {expandedVendor === vendor.id ? "Hide" : "View"} Details
                             </button>
 
                             {vendor.status !== "approved" && (
@@ -97,33 +97,62 @@ export default function AdminVendors({ vendors, filter, setFilter, onApprove, on
                             )}
                         </div>
 
-                        {/* Expanded Products */}
-                        {expandedVendor === vendor.id && vendor.totalProducts > 0 && (
-                            <div className="mt-4 pt-4 border-t-2 space-y-3 animate-in fade-in slide-in-from-top-2">
-                                <h4 className="font-bold text-gray-800 text-sm">Products ({vendor.totalProducts})</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
-                                    {(vendor.products || []).map((product) => (
-                                        <div key={product.id} className="bg-white border rounded-lg p-3 flex gap-3 shadow-sm hover:shadow-md transition">
-                                            {product.product_images?.[0]?.image_url ? (
+                        {/* Expanded Details */}
+                        {expandedVendor === vendor.id && (
+                            <div className="mt-4 pt-4 border-t-2 space-y-6 animate-in fade-in slide-in-from-top-2">
+
+                                {/* Identity Verification Section */}
+                                <div>
+                                    <h4 className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2">
+                                        🆔 Identity Verification (Aadhaar Card)
+                                    </h4>
+                                    {vendor.aadhaar_url ? (
+                                        <div className="bg-gray-100 p-4 rounded-xl inline-block">
+                                            <a href={vendor.aadhaar_url} target="_blank" rel="noopener noreferrer">
                                                 <img
-                                                    src={product.product_images[0].image_url}
-                                                    className="w-12 md:w-16 h-12 md:h-16 object-cover rounded"
-                                                    alt={product.name}
+                                                    src={vendor.aadhaar_url}
+                                                    alt="Vendor Aadhaar"
+                                                    className="max-h-64 object-contain rounded-lg border-2 border-white shadow-sm hover:scale-105 transition-transform cursor-zoom-in"
                                                 />
-                                            ) : (
-                                                <div className="w-12 md:w-16 h-12 md:h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-[10px]">No Image</div>
-                                            )}
-                                            <div className="flex-1 text-xs md:text-sm">
-                                                <p className="font-semibold text-gray-900 truncate">{product.name}</p>
-                                                <p className="text-blue-600 font-bold">₹{product.price}</p>
-                                                <div className="flex gap-3 text-gray-500 mt-1">
-                                                    <span>Stock: {product.stock}</span>
-                                                    <span>Sold: {product.sold || 0}</span>
-                                                </div>
-                                            </div>
+                                            </a>
+                                            <p className="text-xs text-center text-gray-500 mt-2">Click image to view full size</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <div className="bg-yellow-50 text-yellow-800 px-4 py-3 rounded-lg text-sm font-medium inline-block">
+                                            ⚠️ No Aadhaar card uploaded by this vendor.
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* Products Section */}
+                                {vendor.totalProducts > 0 && (
+                                    <div>
+                                        <h4 className="font-bold text-gray-800 text-sm mb-3">Products ({vendor.totalProducts})</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+                                            {(vendor.products || []).map((product) => (
+                                                <div key={product.id} className="bg-white border rounded-lg p-3 flex gap-3 shadow-sm hover:shadow-md transition">
+                                                    {product.product_images?.[0]?.image_url ? (
+                                                        <img
+                                                            src={product.product_images[0].image_url}
+                                                            className="w-12 md:w-16 h-12 md:h-16 object-cover rounded"
+                                                            alt={product.name}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-12 md:w-16 h-12 md:h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-[10px]">No Image</div>
+                                                    )}
+                                                    <div className="flex-1 text-xs md:text-sm">
+                                                        <p className="font-semibold text-gray-900 truncate">{product.name}</p>
+                                                        <p className="text-blue-600 font-bold">₹{product.price}</p>
+                                                        <div className="flex gap-3 text-gray-500 mt-1">
+                                                            <span>Stock: {product.stock}</span>
+                                                            <span>Sold: {product.sold || 0}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

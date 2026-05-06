@@ -1,10 +1,15 @@
 import VendorSidebar from "./VendorSidebar";
 import VendorTopbar from "./VendorTopbar";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import PendingVendorModal from "../../components/PendingVendorModal";
 
 export default function VendorLayout() {
   const vendor = JSON.parse(localStorage.getItem("vendor") || "{}");
+
+  // If no Aadhaar, force onboarding (verification)
+  if (vendor && !vendor.aadhaar_url) {
+    return <Navigate to="/vendor/onboarding" replace />;
+  }
 
   // If vendor exists but not approved → show restriction modal
   if (vendor && vendor.status !== "approved") {

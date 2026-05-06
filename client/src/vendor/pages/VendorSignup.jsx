@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { vendorSignup, signInWithGoogle } from "../../api/auth";
+import { uploadImagesToCloudinary } from "../../api/cloudinary";
 import supabase from "../../utils/supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -38,15 +39,11 @@ export default function VendorSignup() {
       let aadhaar_url = null;
       if (aadhaarImage) {
         try {
-          const path = `aadhaar_${Date.now()}_${aadhaarImage.name}`;
-          const { error: uploadErr } = await supabase.storage
-            .from("product-images")
-            .upload(path, aadhaarImage);
-
-          if (uploadErr) throw uploadErr;
-
-          const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-          aadhaar_url = data.publicUrl;
+          const uploadedUrls = await uploadImagesToCloudinary([aadhaarImage]);
+          if (!uploadedUrls || uploadedUrls.length === 0) {
+            throw new Error("Cloudinary upload failed");
+          }
+          aadhaar_url = uploadedUrls[0];
         } catch (uploadErr) {
           console.error("Supabase upload error:", uploadErr);
           toast.error("Image upload failed. Please try again.");
@@ -219,14 +216,14 @@ export default function VendorSignup() {
               toast.error(error.message || "Google signup failed");
             }
           }}
-          className="w-full flex items-center justify-center gap-3 border border-gray-300 p-3 rounded-xl hover:bg-gray-50 transition shadow-sm mb-4"
+          className="w-full flex items-center justify-center gap-2 border border-slate-300 rounded-lg py-2.5 text-slate-600 hover:bg-slate-50 transition font-medium bg-white"
         >
           <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            alt="google"
+            src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+            alt="Google"
             className="w-5 h-5"
           />
-          <span className="font-medium">Sign up with Google</span>
+          Continue with Google
         </button>
 
         <p className="text-center text-gray-600 mt-4">

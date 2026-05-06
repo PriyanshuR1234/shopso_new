@@ -31,7 +31,7 @@ export default function VendorLogin() {
       .from("vendors")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (vErr || !vendor) {
       // Check if this is a Google OAuth user without vendor profile
@@ -44,7 +44,7 @@ export default function VendorLogin() {
       // If user exists but no vendor profile, redirect to vendor onboarding
       if (userProfile && userProfile.role === "vendor") {
         toast.error("Please complete vendor registration.");
-        window.location.href = "/vendor/signup";
+        window.location.href = "/vendor/onboarding";
         return;
       }
 

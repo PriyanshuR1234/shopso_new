@@ -143,14 +143,14 @@ export default function UserLogin() {
         {/* Google Login */}
         <button
           onClick={googleLogin}
-          className="w-full flex items-center justify-center gap-3 border p-3 rounded-xl hover:bg-gray-50 transition shadow-sm"
+          className="w-full flex items-center justify-center gap-2 border border-slate-300 rounded-lg py-2.5 text-slate-600 hover:bg-slate-50 transition font-medium bg-white"
         >
           <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            alt="google"
+            src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+            alt="Google"
             className="w-5 h-5"
           />
-          <span className="font-medium">Continue with Google</span>
+          Continue with Google
         </button>
 
         {/* Signup Link */}

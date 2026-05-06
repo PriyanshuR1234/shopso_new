@@ -7,10 +7,16 @@ import supabase from "../utils/supabaseClient";
 ------------------------------------------------------------------ */
 export async function userSignup({ email, password, name }) {
   try {
-    // 1️⃣ Create Supabase auth user
+    // 1️⃣ Create Supabase auth user (Trigger creates public.users row)
     const { data: authUser, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name,
+          role: "customer"
+        }
+      }
     });
 
     if (authError) {
@@ -20,21 +26,7 @@ export async function userSignup({ email, password, name }) {
       return { error: authError.message };
     }
 
-    const userId = authUser.user.id;
-
-    // 2️⃣ Store basic user info
-    const { data, error } = await supabase
-      .from("users")
-      .insert({
-        id: userId,
-        email,
-        name,
-        role: "customer",
-      })
-      .select()
-      .single();
-
-    return { user: data, error };
+    return { user: authUser.user, error: null };
   } catch (err) {
     return { error: err.message };
   }
@@ -108,7 +100,7 @@ export async function vendorSignup({
   aadhaar_url,
 }) {
   try {
-    // 1️⃣ Create auth user
+    // 1️⃣ Create auth user (Trigger handles Profile & Vendor creation)
     const { data: authUser, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -116,7 +108,12 @@ export async function vendorSignup({
         data: {
           name,
           role: "vendor",
+          phone,
+          shop_name,
+          shop_description,
+          aadhaar_url
         },
+        emailRedirectTo: `${window.location.origin}/vendor/dashboard`
       },
     });
 
@@ -126,31 +123,6 @@ export async function vendorSignup({
       }
       return { error: authError.message };
     }
-
-    const userId = authUser.user.id;
-
-    // 2️⃣ Insert into "users" table
-    const { error: userErr } = await supabase.from("users").insert({
-      id: userId,
-      email,
-      name,
-      phone,
-      role: "vendor",
-    });
-
-    if (userErr) return { error: userErr.message };
-
-    // 3️⃣ Insert into "vendors" table
-    const { error: vendorErr } = await supabase.from("vendors").insert({
-      user_id: userId,
-      shop_name,
-      shop_description,
-      phone,
-      aadhaar_url,
-      status: "pending",
-    });
-
-    if (vendorErr) return { error: vendorErr.message };
 
     return { success: true, error: null };
   } catch (err) {

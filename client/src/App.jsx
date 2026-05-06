@@ -27,6 +27,7 @@ import AddProduct from "./vendor/pages/AddProduct";
 import VendorLogin from "./vendor/pages/VendorLogin";
 import EditProduct from "./vendor/pages/EditProduct";
 import VendorSignup from "./vendor/pages/VendorSignup.jsx"
+import VendorOnboarding from "./vendor/pages/VendorOnboarding.jsx"
 import VendorOrders from "./vendor/pages/VendorOrders";
 import VendorOrderDetails from "./vendor/pages/VendorOrderDetails";
 
@@ -97,24 +98,11 @@ const App = () => {
           .eq("id", session.user.id)
           .single();
 
-        // If no profile exists (e.g., Google OAuth user), create one
+        // If no profile exists (e.g., Google OAuth user), it should be handled by the trigger now.
+        // We just reload the user metadata if needed.
         if (!profile) {
-          const { data: newProfile } = await supabase
-            .from("users")
-            .insert({
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || "User",
-              role: session.user.user_metadata?.role || "customer",
-            })
-            .select()
-            .single();
-
-          if (newProfile) {
-            const fullUser = { ...session.user, profile: newProfile };
-            localStorage.setItem("user", JSON.stringify(fullUser));
-            window.dispatchEvent(new Event("user-session-change"));
-          }
+          console.warn("User logged in but profile not found immediately. Trigger delay?");
+          // Optional: Retry fetch or just wait
         } else {
           const fullUser = { ...session.user, profile };
           localStorage.setItem("user", JSON.stringify(fullUser));
@@ -126,7 +114,7 @@ const App = () => {
               .from("vendors")
               .select("*")
               .eq("user_id", session.user.id)
-              .single();
+              .maybeSingle();
 
             if (vendorData) {
               localStorage.setItem("vendor", JSON.stringify(vendorData));
@@ -182,6 +170,7 @@ const App = () => {
         {/* ───────────── Vendor Login (NO LAYOUT) ───────────── */}
         <Route path="/vendor/login" element={<VendorLogin />} />
         <Route path="/vendor/signup" element={<VendorSignup />} />
+        <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
 
         {/* ---------------- Vendor Layout ---------------- */}
         <Route element={<VendorLayout />}>

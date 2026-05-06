@@ -17,6 +17,7 @@ export default function UserProfile() {
     zip: "",
   });
 
+  const [initialPhone, setInitialPhone] = useState("");
   const [phoneVerified, setPhoneVerified] = useState(false);
 
   if (!user) {
@@ -74,6 +75,7 @@ export default function UserProfile() {
             state: newProfile.state || "",
             zip: newProfile.zip || "",
           });
+          setInitialPhone(newProfile.phone || "");
           setPhoneVerified(newProfile.phone_verified || false);
           toast.success("Profile loaded successfully!");
         }
@@ -88,6 +90,7 @@ export default function UserProfile() {
           state: data.state || "",
           zip: data.zip || "",
         });
+        setInitialPhone(data.phone || "");
         setPhoneVerified(data.phone_verified || false);
       }
     } catch (err) {
@@ -105,22 +108,36 @@ export default function UserProfile() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Check if phone number has changed
+      const isPhoneChanged = formData.mobile !== initialPhone;
+
+      const updates = {
+        id: user.id,
+        name: formData.name,
+        mobile: formData.mobile,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        email: user.email,
+      };
+
+      // If phone changed, reset verification status
+      if (isPhoneChanged) {
+        updates.phone_verified = false;
+        // Also sync 'phone' column if schema uses both
+        updates.phone = formData.mobile;
+      }
+
+      // Use the secure function if available, otherwise upsert
+      // Since we might be setting phone_verified to FALSE, standard upsert is fine/safer than TRUE
       const { error } = await supabase
         .from("users")
-        .upsert({
-          id: user.id,
-          name: formData.name,
-          mobile: formData.mobile,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip: formData.zip,
-          email: user.email, // Keep email synced
-        });
+        .upsert(updates);
 
       if (error) throw error;
 
-      // Update Local Storage User Object (including metadata for Navbar sync)
+      // Update Local Storage User Object
       const updatedUser = {
         ...user,
         user_metadata: {
@@ -132,7 +149,14 @@ export default function UserProfile() {
       localStorage.setItem("user", JSON.stringify(updatedUser));
       window.dispatchEvent(new Event("user-session-change"));
 
-      toast.success("Profile updated successfully!");
+      if (isPhoneChanged) {
+        setInitialPhone(formData.mobile);
+        setPhoneVerified(false);
+        toast.success("Profile updated! Phone number changed - please verify it again.");
+      } else {
+        toast.success("Profile updated successfully!");
+      }
+
       setEditMode(false);
     } catch (err) {
       console.error("Save error", err);
@@ -235,9 +259,11 @@ export default function UserProfile() {
                     </label>
                     <input
                       name="mobile"
-                      disabled={true}
-                      value={formData.mobile || "No phone number"}
-                      className="w-full p-3 rounded-lg border border-transparent bg-gray-100 text-gray-700 cursor-not-allowed"
+                      disabled={!editMode}
+                      value={formData.mobile || ""}
+                      onChange={handleChange}
+                      placeholder="Enter mobile number"
+                      className={`w-full p-3 rounded-lg border ${editMode ? "border-sky-300 bg-white" : "border-transparent bg-gray-100"} ${!editMode ? "text-gray-700 cursor-not-allowed" : "text-gray-900"}`}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       {phoneVerified
